@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package grpc;
+
+// Definición del servicio de chat
+service ChatServer {
+    rpc SendMsg (ClientRequest) returns (ClientMsg) {}
+}
+
+// Request que contiene el nombre del usuario
+message ClientRequest {
+    string name = 1; 
+}
+
+// El response que contiene el mensaje del cliente
+message ClientMsg {
+    string message = 1;
+}
