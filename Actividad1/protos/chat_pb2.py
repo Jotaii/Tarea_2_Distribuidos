@@ -20,26 +20,19 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='grpc',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\nchat.proto\x12\x04grpc\"\x1d\n\rClientRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x1c\n\tClientMsg\x12\x0f\n\x07message\x18\x01 \x01(\t2?\n\nChatServer\x12\x31\n\x07SendMsg\x12\x13.grpc.ClientRequest\x1a\x0f.grpc.ClientMsg\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\nchat.proto\x12\x04grpc\"\x07\n\x05\x45mpty\"F\n\x03Msg\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\tclient_id\x18\x02 \x01(\t\x12\x0f\n\x07\x64\x65st_id\x18\x03 \x01(\t\x12\x0f\n\x07message\x18\x04 \x01(\t2N\n\x04\x43hat\x12!\n\x07SendMsg\x12\t.grpc.Msg\x1a\x0b.grpc.Empty\x12#\n\x07\x43hannel\x12\x0b.grpc.Empty\x1a\t.grpc.Msg0\x01\x62\x06proto3')
 )
 
 
 
 
-_CLIENTREQUEST = _descriptor.Descriptor(
-  name='ClientRequest',
-  full_name='grpc.ClientRequest',
+_EMPTY = _descriptor.Descriptor(
+  name='Empty',
+  full_name='grpc.Empty',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
-    _descriptor.FieldDescriptor(
-      name='name', full_name='grpc.ClientRequest.name', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -53,20 +46,41 @@ _CLIENTREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=20,
-  serialized_end=49,
+  serialized_end=27,
 )
 
 
-_CLIENTMSG = _descriptor.Descriptor(
-  name='ClientMsg',
-  full_name='grpc.ClientMsg',
+_MSG = _descriptor.Descriptor(
+  name='Msg',
+  full_name='grpc.Msg',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='message', full_name='grpc.ClientMsg.message', index=0,
+      name='id', full_name='grpc.Msg.id', index=0,
       number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='client_id', full_name='grpc.Msg.client_id', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='dest_id', full_name='grpc.Msg.dest_id', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='message', full_name='grpc.Msg.message', index=3,
+      number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -83,51 +97,60 @@ _CLIENTMSG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=51,
-  serialized_end=79,
+  serialized_start=29,
+  serialized_end=99,
 )
 
-DESCRIPTOR.message_types_by_name['ClientRequest'] = _CLIENTREQUEST
-DESCRIPTOR.message_types_by_name['ClientMsg'] = _CLIENTMSG
+DESCRIPTOR.message_types_by_name['Empty'] = _EMPTY
+DESCRIPTOR.message_types_by_name['Msg'] = _MSG
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-ClientRequest = _reflection.GeneratedProtocolMessageType('ClientRequest', (_message.Message,), {
-  'DESCRIPTOR' : _CLIENTREQUEST,
+Empty = _reflection.GeneratedProtocolMessageType('Empty', (_message.Message,), {
+  'DESCRIPTOR' : _EMPTY,
   '__module__' : 'chat_pb2'
-  # @@protoc_insertion_point(class_scope:grpc.ClientRequest)
+  # @@protoc_insertion_point(class_scope:grpc.Empty)
   })
-_sym_db.RegisterMessage(ClientRequest)
+_sym_db.RegisterMessage(Empty)
 
-ClientMsg = _reflection.GeneratedProtocolMessageType('ClientMsg', (_message.Message,), {
-  'DESCRIPTOR' : _CLIENTMSG,
+Msg = _reflection.GeneratedProtocolMessageType('Msg', (_message.Message,), {
+  'DESCRIPTOR' : _MSG,
   '__module__' : 'chat_pb2'
-  # @@protoc_insertion_point(class_scope:grpc.ClientMsg)
+  # @@protoc_insertion_point(class_scope:grpc.Msg)
   })
-_sym_db.RegisterMessage(ClientMsg)
+_sym_db.RegisterMessage(Msg)
 
 
 
-_CHATSERVER = _descriptor.ServiceDescriptor(
-  name='ChatServer',
-  full_name='grpc.ChatServer',
+_CHAT = _descriptor.ServiceDescriptor(
+  name='Chat',
+  full_name='grpc.Chat',
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=81,
-  serialized_end=144,
+  serialized_start=101,
+  serialized_end=179,
   methods=[
   _descriptor.MethodDescriptor(
     name='SendMsg',
-    full_name='grpc.ChatServer.SendMsg',
+    full_name='grpc.Chat.SendMsg',
     index=0,
     containing_service=None,
-    input_type=_CLIENTREQUEST,
-    output_type=_CLIENTMSG,
+    input_type=_MSG,
+    output_type=_EMPTY,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='Channel',
+    full_name='grpc.Chat.Channel',
+    index=1,
+    containing_service=None,
+    input_type=_EMPTY,
+    output_type=_MSG,
     serialized_options=None,
   ),
 ])
-_sym_db.RegisterServiceDescriptor(_CHATSERVER)
+_sym_db.RegisterServiceDescriptor(_CHAT)
 
-DESCRIPTOR.services_by_name['ChatServer'] = _CHATSERVER
+DESCRIPTOR.services_by_name['Chat'] = _CHAT
 
 # @@protoc_insertion_point(module_scope)

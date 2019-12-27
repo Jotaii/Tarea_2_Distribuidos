@@ -11,8 +11,8 @@ services:
     build: client/
     # command: python client.py
     # Test
-    #command: tail -f /dev/null
-    command: python client.py
+    command: tail -f /dev/null
+    #command: python client.py
     volumes:
       - ./protos:/client/protos/
     depends_on:

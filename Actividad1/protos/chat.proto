@@ -2,17 +2,16 @@ syntax = "proto3";
 
 package grpc;
 
-// Definición del servicio de chat
-service ChatServer {
-    rpc SendMsg (ClientRequest) returns (ClientMsg) {}
+service Chat {
+    rpc SendMsg (Msg) returns (Empty);
+    rpc Channel (Empty) returns (stream Msg);
 }
 
-// Request que contiene el nombre del usuario
-message ClientRequest {
-    string name = 1; 
-}
+message Empty {}
 
-// El response que contiene el mensaje del cliente
-message ClientMsg {
-    string message = 1;
-}
+message Msg {
+    string id = 1;
+    string client_id = 2;
+    string dest_id = 3;
+    string message = 4;
+} 
