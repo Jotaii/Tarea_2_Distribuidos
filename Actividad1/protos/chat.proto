@@ -7,6 +7,20 @@ service Chat {
     rpc Channel (Empty) returns (stream Msg);
 }
 
+service Users {
+    rpc Join (User) returns (Response);
+    rpc GetUsers (Empty) returns (UsersListResponse);
+}
+
+service MessagesService {
+    rpc SaveMessage (Msg) returns (Empty);
+    rpc GetAllMessages (User) returns (UserMessages);
+}
+
+message Response {
+    bool opt = 1;
+}
+
 message Empty {}
 
 message Msg {
@@ -15,3 +29,15 @@ message Msg {
     string dest_id = 3;
     string message = 4;
 } 
+
+message User {
+    string user_id = 1;
+}
+
+message UsersListResponse {
+    repeated User users = 1;
+}
+
+message UserMessages {
+    repeated Msg msgs = 1;
+}

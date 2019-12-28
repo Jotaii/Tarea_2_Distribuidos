@@ -5,6 +5,4 @@ RUN python -m pip install grpcio \
 
 EXPOSE 50051
 
-COPY server.py /server/
-
 WORKDIR /server/

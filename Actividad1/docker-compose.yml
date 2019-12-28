@@ -5,6 +5,7 @@ services:
     build: server/
     command: python server.py
     volumes:
+      - ./server/:/server
       - ./protos:/server/protos/
 
   client:

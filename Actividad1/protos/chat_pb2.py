@@ -20,10 +20,41 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='grpc',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\nchat.proto\x12\x04grpc\"\x07\n\x05\x45mpty\"F\n\x03Msg\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\tclient_id\x18\x02 \x01(\t\x12\x0f\n\x07\x64\x65st_id\x18\x03 \x01(\t\x12\x0f\n\x07message\x18\x04 \x01(\t2N\n\x04\x43hat\x12!\n\x07SendMsg\x12\t.grpc.Msg\x1a\x0b.grpc.Empty\x12#\n\x07\x43hannel\x12\x0b.grpc.Empty\x1a\t.grpc.Msg0\x01\x62\x06proto3')
+  serialized_pb=_b('\n\nchat.proto\x12\x04grpc\"\x17\n\x08Response\x12\x0b\n\x03opt\x18\x01 \x01(\x08\"\x07\n\x05\x45mpty\"F\n\x03Msg\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\tclient_id\x18\x02 \x01(\t\x12\x0f\n\x07\x64\x65st_id\x18\x03 \x01(\t\x12\x0f\n\x07message\x18\x04 \x01(\t\"\x17\n\x04User\x12\x0f\n\x07user_id\x18\x01 \x01(\t\".\n\x11UsersListResponse\x12\x19\n\x05users\x18\x01 \x03(\x0b\x32\n.grpc.User\"\'\n\x0cUserMessages\x12\x17\n\x04msgs\x18\x01 \x03(\x0b\x32\t.grpc.Msg2N\n\x04\x43hat\x12!\n\x07SendMsg\x12\t.grpc.Msg\x1a\x0b.grpc.Empty\x12#\n\x07\x43hannel\x12\x0b.grpc.Empty\x1a\t.grpc.Msg0\x01\x32]\n\x05Users\x12\"\n\x04Join\x12\n.grpc.User\x1a\x0e.grpc.Response\x12\x30\n\x08GetUsers\x12\x0b.grpc.Empty\x1a\x17.grpc.UsersListResponse2j\n\x0fMessagesService\x12%\n\x0bSaveMessage\x12\t.grpc.Msg\x1a\x0b.grpc.Empty\x12\x30\n\x0eGetAllMessages\x12\n.grpc.User\x1a\x12.grpc.UserMessagesb\x06proto3')
 )
 
 
+
+
+_RESPONSE = _descriptor.Descriptor(
+  name='Response',
+  full_name='grpc.Response',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='opt', full_name='grpc.Response.opt', index=0,
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=20,
+  serialized_end=43,
+)
 
 
 _EMPTY = _descriptor.Descriptor(
@@ -45,8 +76,8 @@ _EMPTY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=20,
-  serialized_end=27,
+  serialized_start=45,
+  serialized_end=52,
 )
 
 
@@ -97,13 +128,119 @@ _MSG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=29,
-  serialized_end=99,
+  serialized_start=54,
+  serialized_end=124,
 )
 
+
+_USER = _descriptor.Descriptor(
+  name='User',
+  full_name='grpc.User',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='user_id', full_name='grpc.User.user_id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=126,
+  serialized_end=149,
+)
+
+
+_USERSLISTRESPONSE = _descriptor.Descriptor(
+  name='UsersListResponse',
+  full_name='grpc.UsersListResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='users', full_name='grpc.UsersListResponse.users', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=151,
+  serialized_end=197,
+)
+
+
+_USERMESSAGES = _descriptor.Descriptor(
+  name='UserMessages',
+  full_name='grpc.UserMessages',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='msgs', full_name='grpc.UserMessages.msgs', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=199,
+  serialized_end=238,
+)
+
+_USERSLISTRESPONSE.fields_by_name['users'].message_type = _USER
+_USERMESSAGES.fields_by_name['msgs'].message_type = _MSG
+DESCRIPTOR.message_types_by_name['Response'] = _RESPONSE
 DESCRIPTOR.message_types_by_name['Empty'] = _EMPTY
 DESCRIPTOR.message_types_by_name['Msg'] = _MSG
+DESCRIPTOR.message_types_by_name['User'] = _USER
+DESCRIPTOR.message_types_by_name['UsersListResponse'] = _USERSLISTRESPONSE
+DESCRIPTOR.message_types_by_name['UserMessages'] = _USERMESSAGES
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
+
+Response = _reflection.GeneratedProtocolMessageType('Response', (_message.Message,), {
+  'DESCRIPTOR' : _RESPONSE,
+  '__module__' : 'chat_pb2'
+  # @@protoc_insertion_point(class_scope:grpc.Response)
+  })
+_sym_db.RegisterMessage(Response)
 
 Empty = _reflection.GeneratedProtocolMessageType('Empty', (_message.Message,), {
   'DESCRIPTOR' : _EMPTY,
@@ -119,6 +256,27 @@ Msg = _reflection.GeneratedProtocolMessageType('Msg', (_message.Message,), {
   })
 _sym_db.RegisterMessage(Msg)
 
+User = _reflection.GeneratedProtocolMessageType('User', (_message.Message,), {
+  'DESCRIPTOR' : _USER,
+  '__module__' : 'chat_pb2'
+  # @@protoc_insertion_point(class_scope:grpc.User)
+  })
+_sym_db.RegisterMessage(User)
+
+UsersListResponse = _reflection.GeneratedProtocolMessageType('UsersListResponse', (_message.Message,), {
+  'DESCRIPTOR' : _USERSLISTRESPONSE,
+  '__module__' : 'chat_pb2'
+  # @@protoc_insertion_point(class_scope:grpc.UsersListResponse)
+  })
+_sym_db.RegisterMessage(UsersListResponse)
+
+UserMessages = _reflection.GeneratedProtocolMessageType('UserMessages', (_message.Message,), {
+  'DESCRIPTOR' : _USERMESSAGES,
+  '__module__' : 'chat_pb2'
+  # @@protoc_insertion_point(class_scope:grpc.UserMessages)
+  })
+_sym_db.RegisterMessage(UserMessages)
+
 
 
 _CHAT = _descriptor.ServiceDescriptor(
@@ -127,8 +285,8 @@ _CHAT = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=101,
-  serialized_end=179,
+  serialized_start=240,
+  serialized_end=318,
   methods=[
   _descriptor.MethodDescriptor(
     name='SendMsg',
@@ -152,5 +310,71 @@ _CHAT = _descriptor.ServiceDescriptor(
 _sym_db.RegisterServiceDescriptor(_CHAT)
 
 DESCRIPTOR.services_by_name['Chat'] = _CHAT
+
+
+_USERS = _descriptor.ServiceDescriptor(
+  name='Users',
+  full_name='grpc.Users',
+  file=DESCRIPTOR,
+  index=1,
+  serialized_options=None,
+  serialized_start=320,
+  serialized_end=413,
+  methods=[
+  _descriptor.MethodDescriptor(
+    name='Join',
+    full_name='grpc.Users.Join',
+    index=0,
+    containing_service=None,
+    input_type=_USER,
+    output_type=_RESPONSE,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='GetUsers',
+    full_name='grpc.Users.GetUsers',
+    index=1,
+    containing_service=None,
+    input_type=_EMPTY,
+    output_type=_USERSLISTRESPONSE,
+    serialized_options=None,
+  ),
+])
+_sym_db.RegisterServiceDescriptor(_USERS)
+
+DESCRIPTOR.services_by_name['Users'] = _USERS
+
+
+_MESSAGESSERVICE = _descriptor.ServiceDescriptor(
+  name='MessagesService',
+  full_name='grpc.MessagesService',
+  file=DESCRIPTOR,
+  index=2,
+  serialized_options=None,
+  serialized_start=415,
+  serialized_end=521,
+  methods=[
+  _descriptor.MethodDescriptor(
+    name='SaveMessage',
+    full_name='grpc.MessagesService.SaveMessage',
+    index=0,
+    containing_service=None,
+    input_type=_MSG,
+    output_type=_EMPTY,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='GetAllMessages',
+    full_name='grpc.MessagesService.GetAllMessages',
+    index=1,
+    containing_service=None,
+    input_type=_USER,
+    output_type=_USERMESSAGES,
+    serialized_options=None,
+  ),
+])
+_sym_db.RegisterServiceDescriptor(_MESSAGESSERVICE)
+
+DESCRIPTOR.services_by_name['MessagesService'] = _MESSAGESSERVICE
 
 # @@protoc_insertion_point(module_scope)
