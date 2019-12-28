@@ -8,6 +8,8 @@ import grpc
 import protos.chat_pb2 as chat_pb2
 import protos.chat_pb2_grpc as chat_pb2_grpc
 
+import sys
+
 
 class Client:
 
@@ -36,31 +38,32 @@ class Client:
         threading.Thread(target=self.get_msgs, daemon=True).start()
 
     def get_msgs(self):
-
         for Msg in self.stub.Channel(chat_pb2.Empty()):
-            print("R[{}] {}".format(Msg.client_id, Msg.message))
-
+            print("[{}] {}".format(Msg.client_id, Msg.message))
+        
     def send(self, dest_user, msg):
         if msg != '':
             chat_msg = chat_pb2.Msg()
             chat_msg.client_id = self.username
             chat_msg.dest_id = dest_user
             chat_msg.message = msg
-            print("S[{}] {}".format(chat_msg.client_id, chat_msg.message))
+            #print("S[{}] {}".format(chat_msg.client_id, chat_msg.message))
             self.stub.SendMsg(chat_msg)
-            #self.messages_stub.GetAllMessages(chat_pb2.Empty())
             self.messages_stub.SaveMessage(chat_msg)
 
     def get_users(self):
+        print("------------------------------")
         print("Lista de usuarios conectados: ")
         users_list = self.users_stub.GetUsers(chat_pb2.Empty())
         
         for user in users_list.users:
             print(user.user_id)
 
+        print("------------------------------")
+
     def get_user_messages(self):
+        print("------------------------------")
         print("Lista de mensajes enviados: ")
-        print("-----------------------------")
         user = chat_pb2.User()
         user.user_id = self.username
         user_messages = self.messages_stub.GetAllMessages(user)
@@ -69,48 +72,26 @@ class Client:
         for message in user_messages.msgs:
             print(message.message)
 
+        print("------------------------------")
 
 if __name__ == '__main__':
     logging.basicConfig()
     c = Client()
 
     while True:
-        print("Elija una opción")
-        print("----------------------------")
-        print("1) Enviar mensaje")
-        print("2) Recibir mensajes")
-        print("3) Mostrar lista de usuarios")
-        print("4) Mostrar todos mis mensajes enviados")
-        opt = input("Su opción: ")
+        #input_text = "[" + c.username + "] "
+        #user_input = input(input_text)
+        user_input = input()
+        sys.stdout.write("\033[F")
 
-        if opt == '2':
-            msg = input("Escriba su mensaje: ")
-            c.send(c.username, msg)
-
-        
-        elif opt == '3':
-            print("???")
+        if user_input == "/users":
             c.get_users()
 
-        elif opt == '4':
+        elif user_input == "/mymessages":
             c.get_user_messages()
 
-    #c.get_users()
-    #c.JoinChat()
-    #client = Client()
-    #client.send("hola")
-    #run()
+        elif user_input == "/exit":
+            break
 
-    '''        
-def run():
-    # NOTE(gRPC Python Team): .close() is possible on a channel and should be
-    # used in circumstances in which the with statement does not fit the needs
-    # of the code.
-    with grpc.insecure_channel('server:50051') as channel:
-        client_name = socket.gethostname()
-        stub = chat_pb2_grpc.ChatStub(channel)
-        threading.Thread(target=self.get_msgs, daemon=True).start()
-
-        response = stub.SendMsg(chat_pb2.SendMsg(name=client_name, message=msg))
-    print("Greeter client received: " + response.message)
-'''
+        else:
+            c.send(c.username, user_input)
