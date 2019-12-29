@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package grpc;
 
+import "google/protobuf/timestamp.proto";
+
 service Chat {
     rpc SendMsg (Msg) returns (Empty);
     rpc Channel (Empty) returns (stream Msg);
@@ -28,6 +30,7 @@ message Msg {
     string client_id = 2;
     string dest_id = 3;
     string message = 4;
+    google.protobuf.Timestamp timestamp = 5;
 } 
 
 message User {

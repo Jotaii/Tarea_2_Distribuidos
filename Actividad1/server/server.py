@@ -5,6 +5,7 @@ import grpc
 
 import protos.chat_pb2 as chat_pb2
 import protos.chat_pb2_grpc as chat_pb2_grpc
+from datetime import datetime
 
 
 class Chat(chat_pb2_grpc.ChatServicer):
@@ -14,7 +15,10 @@ class Chat(chat_pb2_grpc.ChatServicer):
 
     def SendMsg(self, request: chat_pb2.Msg, context):
         f = open("log.txt", "a")
-        f.write("[" + request.client_id + "]: " + request.message + "\n")
+        seconds = request.timestamp.seconds
+        dt_object = datetime.fromtimestamp(seconds)
+        date_time = dt_object.strftime("%m/%d/%Y, %H:%M:%S")
+        f.write("[{} - {} ] {}\n".format(date_time, request.client_id, request.message))
         f.close()
         self.chats.append(request)
 

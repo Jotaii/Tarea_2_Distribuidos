@@ -13,6 +13,7 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
+from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
@@ -20,8 +21,9 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='grpc',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\nchat.proto\x12\x04grpc\"\x17\n\x08Response\x12\x0b\n\x03opt\x18\x01 \x01(\x08\"\x07\n\x05\x45mpty\"F\n\x03Msg\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\tclient_id\x18\x02 \x01(\t\x12\x0f\n\x07\x64\x65st_id\x18\x03 \x01(\t\x12\x0f\n\x07message\x18\x04 \x01(\t\"\x17\n\x04User\x12\x0f\n\x07user_id\x18\x01 \x01(\t\".\n\x11UsersListResponse\x12\x19\n\x05users\x18\x01 \x03(\x0b\x32\n.grpc.User\"\'\n\x0cUserMessages\x12\x17\n\x04msgs\x18\x01 \x03(\x0b\x32\t.grpc.Msg2N\n\x04\x43hat\x12!\n\x07SendMsg\x12\t.grpc.Msg\x1a\x0b.grpc.Empty\x12#\n\x07\x43hannel\x12\x0b.grpc.Empty\x1a\t.grpc.Msg0\x01\x32]\n\x05Users\x12\"\n\x04Join\x12\n.grpc.User\x1a\x0e.grpc.Response\x12\x30\n\x08GetUsers\x12\x0b.grpc.Empty\x1a\x17.grpc.UsersListResponse2j\n\x0fMessagesService\x12%\n\x0bSaveMessage\x12\t.grpc.Msg\x1a\x0b.grpc.Empty\x12\x30\n\x0eGetAllMessages\x12\n.grpc.User\x1a\x12.grpc.UserMessagesb\x06proto3')
-)
+  serialized_pb=_b('\n\nchat.proto\x12\x04grpc\x1a\x1fgoogle/protobuf/timestamp.proto\"\x17\n\x08Response\x12\x0b\n\x03opt\x18\x01 \x01(\x08\"\x07\n\x05\x45mpty\"u\n\x03Msg\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\tclient_id\x18\x02 \x01(\t\x12\x0f\n\x07\x64\x65st_id\x18\x03 \x01(\t\x12\x0f\n\x07message\x18\x04 \x01(\t\x12-\n\ttimestamp\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"\x17\n\x04User\x12\x0f\n\x07user_id\x18\x01 \x01(\t\".\n\x11UsersListResponse\x12\x19\n\x05users\x18\x01 \x03(\x0b\x32\n.grpc.User\"\'\n\x0cUserMessages\x12\x17\n\x04msgs\x18\x01 \x03(\x0b\x32\t.grpc.Msg2N\n\x04\x43hat\x12!\n\x07SendMsg\x12\t.grpc.Msg\x1a\x0b.grpc.Empty\x12#\n\x07\x43hannel\x12\x0b.grpc.Empty\x1a\t.grpc.Msg0\x01\x32]\n\x05Users\x12\"\n\x04Join\x12\n.grpc.User\x1a\x0e.grpc.Response\x12\x30\n\x08GetUsers\x12\x0b.grpc.Empty\x1a\x17.grpc.UsersListResponse2j\n\x0fMessagesService\x12%\n\x0bSaveMessage\x12\t.grpc.Msg\x1a\x0b.grpc.Empty\x12\x30\n\x0eGetAllMessages\x12\n.grpc.User\x1a\x12.grpc.UserMessagesb\x06proto3')
+  ,
+  dependencies=[google_dot_protobuf_dot_timestamp__pb2.DESCRIPTOR,])
 
 
 
@@ -52,8 +54,8 @@ _RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=20,
-  serialized_end=43,
+  serialized_start=53,
+  serialized_end=76,
 )
 
 
@@ -76,8 +78,8 @@ _EMPTY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=45,
-  serialized_end=52,
+  serialized_start=78,
+  serialized_end=85,
 )
 
 
@@ -116,6 +118,13 @@ _MSG = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='timestamp', full_name='grpc.Msg.timestamp', index=4,
+      number=5, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -128,8 +137,8 @@ _MSG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=54,
-  serialized_end=124,
+  serialized_start=87,
+  serialized_end=204,
 )
 
 
@@ -159,8 +168,8 @@ _USER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=126,
-  serialized_end=149,
+  serialized_start=206,
+  serialized_end=229,
 )
 
 
@@ -190,8 +199,8 @@ _USERSLISTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=151,
-  serialized_end=197,
+  serialized_start=231,
+  serialized_end=277,
 )
 
 
@@ -221,10 +230,11 @@ _USERMESSAGES = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=199,
-  serialized_end=238,
+  serialized_start=279,
+  serialized_end=318,
 )
 
+_MSG.fields_by_name['timestamp'].message_type = google_dot_protobuf_dot_timestamp__pb2._TIMESTAMP
 _USERSLISTRESPONSE.fields_by_name['users'].message_type = _USER
 _USERMESSAGES.fields_by_name['msgs'].message_type = _MSG
 DESCRIPTOR.message_types_by_name['Response'] = _RESPONSE
@@ -285,8 +295,8 @@ _CHAT = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=240,
-  serialized_end=318,
+  serialized_start=320,
+  serialized_end=398,
   methods=[
   _descriptor.MethodDescriptor(
     name='SendMsg',
@@ -318,8 +328,8 @@ _USERS = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=1,
   serialized_options=None,
-  serialized_start=320,
-  serialized_end=413,
+  serialized_start=400,
+  serialized_end=493,
   methods=[
   _descriptor.MethodDescriptor(
     name='Join',
@@ -351,8 +361,8 @@ _MESSAGESSERVICE = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=2,
   serialized_options=None,
-  serialized_start=415,
-  serialized_end=521,
+  serialized_start=495,
+  serialized_end=601,
   methods=[
   _descriptor.MethodDescriptor(
     name='SaveMessage',

@@ -9,6 +9,8 @@ import protos.chat_pb2 as chat_pb2
 import protos.chat_pb2_grpc as chat_pb2_grpc
 
 import sys
+from google.protobuf.timestamp_pb2 import Timestamp
+from datetime import datetime
 
 
 class Client:
@@ -39,7 +41,10 @@ class Client:
 
     def get_msgs(self):
         for Msg in self.stub.Channel(chat_pb2.Empty()):
-            print("[{}] {}".format(Msg.client_id, Msg.message))
+            seconds = Msg.timestamp.seconds
+            dt_object = datetime.fromtimestamp(seconds)
+            date_time = dt_object.strftime("%m/%d/%Y, %H:%M:%S")
+            print("[{} - {} ] {}".format(date_time, Msg.client_id, Msg.message))
         
     def send(self, dest_user, msg):
         if msg != '':
@@ -47,7 +52,10 @@ class Client:
             chat_msg.client_id = self.username
             chat_msg.dest_id = dest_user
             chat_msg.message = msg
-            #print("S[{}] {}".format(chat_msg.client_id, chat_msg.message))
+            timestamp = Timestamp()
+            timestamp.GetCurrentTime()
+            chat_msg.timestamp.seconds = timestamp.seconds
+            chat_msg.timestamp.nanos = timestamp.nanos
             self.stub.SendMsg(chat_msg)
             self.messages_stub.SaveMessage(chat_msg)
 
@@ -68,9 +76,11 @@ class Client:
         user.user_id = self.username
         user_messages = self.messages_stub.GetAllMessages(user)
 
-        print(user_messages)
         for message in user_messages.msgs:
-            print(message.message)
+            seconds = message.timestamp.seconds
+            dt_object = datetime.fromtimestamp(seconds)
+            date_time = dt_object.strftime("%m/%d/%Y, %H:%M:%S")
+            print("[{} - {} ] {}".format(date_time, message.client_id, message.message))
 
         print("------------------------------")
 
@@ -79,8 +89,6 @@ if __name__ == '__main__':
     c = Client()
 
     while True:
-        #input_text = "[" + c.username + "] "
-        #user_input = input(input_text)
         user_input = input()
         sys.stdout.write("\033[F")
 
