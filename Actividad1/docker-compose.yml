@@ -6,21 +6,16 @@ services:
     command: python server.py
     volumes:
       - ./server/:/server
-      - ./protos:/server/protos/
 
   client1:
     build: client/
     command: tail -f /dev/null
-    volumes:
-      - ./protos:/client/protos/
     depends_on:
       - server
 
   client2:
     build: client/
     command: tail -f /dev/null
-    volumes:
-      - ./protos:/client/protos/
     depends_on:
       - server
       
