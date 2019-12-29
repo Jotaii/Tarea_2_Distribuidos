@@ -3,8 +3,8 @@ import logging
 
 import grpc
 
-import protos.chat_pb2 as chat_pb2
-import protos.chat_pb2_grpc as chat_pb2_grpc
+import chat_pb2 as chat_pb2
+import chat_pb2_grpc as chat_pb2_grpc
 from datetime import datetime
 
 
