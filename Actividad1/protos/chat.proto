@@ -12,6 +12,7 @@ service Chat {
 service Users {
     rpc Join (User) returns (Response);
     rpc GetUsers (Empty) returns (UsersListResponse);
+    rpc Disconnect (User) returns (Empty);
 }
 
 service MessagesService {
@@ -27,10 +28,8 @@ message Empty {}
 
 message Msg {
     string id = 1;
-    string client_id = 2;
-    string dest_id = 3;
-    string message = 4;
-    google.protobuf.Timestamp timestamp = 5;
+    string message = 2;
+    google.protobuf.Timestamp timestamp = 3;
 } 
 
 message User {

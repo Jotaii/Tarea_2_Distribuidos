@@ -41,21 +41,24 @@ class Client:
 
     def get_msgs(self):
         for Msg in self.stub.Channel(chat_pb2.Empty()):
+            username = Msg.id.split("-")[0]
             seconds = Msg.timestamp.seconds
             dt_object = datetime.fromtimestamp(seconds)
             date_time = dt_object.strftime("%m/%d/%Y, %H:%M:%S")
-            print("[{} - {} ] {}".format(date_time, Msg.client_id, Msg.message))
+            print("[{} - {} ] {}".format(date_time, username, Msg.message))
         
-    def send(self, dest_user, msg):
+    def send(self, msg):
         if msg != '':
-            chat_msg = chat_pb2.Msg()
-            chat_msg.client_id = self.username
-            chat_msg.dest_id = dest_user
-            chat_msg.message = msg
             timestamp = Timestamp()
             timestamp.GetCurrentTime()
+            msg_id = self.username + "-" + str(timestamp.nanos)
+            
+            chat_msg = chat_pb2.Msg()
+            chat_msg.id = msg_id
+            chat_msg.message = msg
             chat_msg.timestamp.seconds = timestamp.seconds
-            chat_msg.timestamp.nanos = timestamp.nanos
+            #chat_msg.timestamp.nanos = timestamp.nanos
+            
             self.stub.SendMsg(chat_msg)
             self.messages_stub.SaveMessage(chat_msg)
 
@@ -84,6 +87,12 @@ class Client:
 
         print("------------------------------")
 
+    def disconnect(self):
+        user = chat_pb2.User()
+        user.user_id = self.username
+        self.users_stub.Disconnect(user)
+
+
 if __name__ == '__main__':
     logging.basicConfig()
     c = Client()
@@ -99,7 +108,8 @@ if __name__ == '__main__':
             c.get_user_messages()
 
         elif user_input == "/exit":
+            c.disconnect()
             break
 
         else:
-            c.send(c.username, user_input)
+            c.send(user_input)

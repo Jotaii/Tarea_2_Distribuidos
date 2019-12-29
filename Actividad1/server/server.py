@@ -15,11 +15,15 @@ class Chat(chat_pb2_grpc.ChatServicer):
 
     def SendMsg(self, request: chat_pb2.Msg, context):
         f = open("log.txt", "a")
+        
+        username = request.id.split("-")[0]
         seconds = request.timestamp.seconds
         dt_object = datetime.fromtimestamp(seconds)
         date_time = dt_object.strftime("%m/%d/%Y, %H:%M:%S")
-        f.write("[{} - {} ] {}\n".format(date_time, request.client_id, request.message))
+
+        f.write("[{} - {} ] {}\n".format(date_time, username, request.message))
         f.close()
+
         self.chats.append(request)
 
         return chat_pb2.Empty()
@@ -46,6 +50,7 @@ class Users(chat_pb2_grpc.UsersServicer):
 
         response.opt = True
         self.users.append(request.user_id)
+        
         return response
 
     def GetUsers(self, request, context):
@@ -61,13 +66,19 @@ class Users(chat_pb2_grpc.UsersServicer):
 
         return users_list
 
+    def Disconnect(self, request, context):
+        username = request.user_id
+        self.users.remove(username)
+
+        return chat_pb2.Empty()
+
 class MessagesServices(chat_pb2_grpc.MessagesServiceServicer):
 
     def __init__(self):
         self.user_messages = {}
 
     def SaveMessage(self, request, context):
-        username = request.client_id
+        username = request.id.split("-")[0]
 
         if username not in self.user_messages:
             self.user_messages[username] = [request]
