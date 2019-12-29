@@ -4,42 +4,61 @@ package grpc;
 
 import "google/protobuf/timestamp.proto";
 
+/* Servicio de Chat para en envío y recepción de mensajes. */
 service Chat {
     rpc SendMsg (Msg) returns (Empty);
     rpc Channel (Empty) returns (stream Msg);
 }
 
+/* Servicio de Usuarios para el administración de estos. 
+ * Permite la conexión de clientes al chat, obtención del listado
+ * de usuarios y la desconexión. */ 
 service Users {
     rpc Join (User) returns (Response);
     rpc GetUsers (Empty) returns (UsersListResponse);
     rpc Disconnect (User) returns (Empty);
 }
 
+/* Servicio de Almacenamiento de mensajes. Permite guardar temporalmente
+ * los mensajes y entregar una lista de estos al cliente que lo solicite. 
+ */
 service MessagesService {
     rpc SaveMessage (Msg) returns (Empty);
     rpc GetAllMessages (User) returns (UserMessages);
 }
 
+/* Mensaje auxiliar para la asignación de ID para clientes. */
 message Response {
     bool opt = 1;
 }
 
+/* Mensaje vacío auxiliar para funciones de servicios que no exijan argu-
+ * mentos o retornos. */
 message Empty {}
 
+/* Mensaje de envío para usuarios. Contiene los elementos que identifican
+ * al cliente, el texto enviado y un timestamp para registrar la hora de 
+ * envío. */
 message Msg {
     string id = 1;
     string message = 2;
     google.protobuf.Timestamp timestamp = 3;
 } 
 
+/* Mensaje de usuario que contiene el id de éste. Utilizado para funciones
+ * que requieran al usuario como argumento. */
 message User {
     string user_id = 1;
 }
 
+/* Mensaje de tipo lista que contiene usuarios. Utilizado para aquellos 
+ * servicios que retornan listas de usuarios. */
 message UsersListResponse {
     repeated User users = 1;
 }
 
+/* Mensaje de tipo lista que contiene mensajes. Utilizado en servicios que
+ * retornar listas de mensajes. */
 message UserMessages {
     repeated Msg msgs = 1;
 }

@@ -14,11 +14,20 @@ from datetime import datetime
 
 
 class Client:
-
+    """
+    Clase Cliente que se conecta al chat mediante protocolos RPC. 
+    
+    Permite el envío de mensajes y obtención de listas mediante el
+    el framework gRPC.
+    """
     def __init__(self):
-
+        # Conexión con el servidor mediante un channel insegurol.
         channel = grpc.insecure_channel('server:50051')
+        
+        # Stub para el servicio de Chat. 
         self.users_stub = chat_pb2_grpc.UsersStub(channel)
+
+        # Creación de un mensaje tipo User para la autenticación al chat.
         request = chat_pb2.User()
 
         exit = False
@@ -28,6 +37,7 @@ class Client:
             response = self.users_stub.Join(request)
 
             if response.opt:
+                # Almacenamiento del ID único del cliente en el servidor.
                 print("Logueado correctamente")
                 self.username = username
                 exit = True
@@ -35,11 +45,20 @@ class Client:
             else:
                 print("Nombre de usuario no disponible. Ingrese otro nombre de usuario")
         
+        # Stubs para servicios de Mensajería y Usuarios.
         self.stub = chat_pb2_grpc.ChatStub(channel)
         self.messages_stub = chat_pb2_grpc.MessagesServiceStub(channel)
+
+        # Thread para monitoreo constante de mensajes recibidos.
         threading.Thread(target=self.get_msgs, daemon=True).start()
 
     def get_msgs(self):
+        """
+        Un método para el monitoreo de mensajes.
+
+        Permite monitorear constantemente sin alterar la interacción del usuario (asincronía)
+        mediante un thread que ejecuta la función paralelamente.
+        """
         for Msg in self.stub.Channel(chat_pb2.Empty()):
             username = Msg.id.split("-")[0]
             seconds = Msg.timestamp.seconds
@@ -48,6 +67,12 @@ class Client:
             print("[{} - {} ] {}".format(date_time, username, Msg.message))
         
     def send(self, msg):
+        """
+        Un método para el envío de mensajes.
+
+        Permite el envío de un mensaje escrito por el cliente. La ejecución de esta función
+        envía el mensaje al servidor para su re-envío y almacenamiento.
+        """
         if msg != '':
             timestamp = Timestamp()
             timestamp.GetCurrentTime()
@@ -63,6 +88,12 @@ class Client:
             self.messages_stub.SaveMessage(chat_msg)
 
     def get_users(self):
+        """
+        Un método para obtener la lista de usuarios desde el servidor.
+
+        A través del stub, el cliente mediante un mensaje vacío recibe un mensaje que contiene
+        una lista con todos los usuarios conectados al chat.
+        """
         print("------------------------------")
         print("Lista de usuarios conectados: ")
         users_list = self.users_stub.GetUsers(chat_pb2.Empty())
@@ -73,6 +104,12 @@ class Client:
         print("------------------------------")
 
     def get_user_messages(self):
+        """
+        Un método para obtener la lista de mensajes envíados por el cliente.
+
+        Al igual que la función para la obtención de usuarios, el cliente recibe un mensaje que
+        contiene una lista con todos los mensajes enviados por éste.
+        """
         print("------------------------------")
         print("Lista de mensajes enviados: ")
         user = chat_pb2.User()
@@ -88,6 +125,12 @@ class Client:
         print("------------------------------")
 
     def disconnect(self):
+        """
+        Un método para desconectar al cliente del chat.
+
+        Mediante el stub, el envío de un mensaje de usuario permite que el servidor borre el id de
+        éste de los usuarios conectados al chat.
+        """
         user = chat_pb2.User()
         user.user_id = self.username
         self.users_stub.Disconnect(user)
@@ -97,19 +140,24 @@ if __name__ == '__main__':
     logging.basicConfig()
     c = Client()
 
+    # Comandos de usuario
     while True:
         user_input = input()
         sys.stdout.write("\033[F")
 
+        # Comando para ver los clientes conectados al chat.
         if user_input == "/users":
             c.get_users()
 
+        # Comando para ver los mensajes enviados por el cliente.
         elif user_input == "/mymessages":
             c.get_user_messages()
 
+        # Comando para desconectarse del chat.
         elif user_input == "/exit":
             c.disconnect()
             break
 
+        # Envío de un mensaje normal.
         else:
             c.send(user_input)
