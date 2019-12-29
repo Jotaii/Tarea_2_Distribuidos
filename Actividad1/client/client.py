@@ -5,8 +5,8 @@ import threading
 
 import grpc
 
-import chat_pb2 as chat_pb2
-import chat_pb2_grpc as chat_pb2_grpc
+import protos.chat_pb2 as chat_pb2
+import protos.chat_pb2_grpc as chat_pb2_grpc
 
 import sys
 from google.protobuf.timestamp_pb2 import Timestamp
@@ -117,10 +117,11 @@ class Client:
         user_messages = self.messages_stub.GetAllMessages(user)
 
         for message in user_messages.msgs:
+            username = message.id.split("-")[0]
             seconds = message.timestamp.seconds
             dt_object = datetime.fromtimestamp(seconds)
             date_time = dt_object.strftime("%m/%d/%Y, %H:%M:%S")
-            print("[{} - {} ] {}".format(date_time, message.client_id, message.message))
+            print("[{} - {} ] {}".format(date_time, username, message.message))
 
         print("------------------------------")
 

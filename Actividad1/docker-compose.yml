@@ -11,12 +11,16 @@ services:
   client1:
     build: client/
     command: tail -f /dev/null
+    volumes:
+      - ./protos:/client/protos/
     depends_on:
       - server
 
   client2:
     build: client/
     command: tail -f /dev/null
+    volumes:
+      - ./protos:/client/protos/
     depends_on:
       - server
       

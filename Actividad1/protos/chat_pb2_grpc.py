@@ -5,8 +5,8 @@ import protos.chat_pb2 as chat__pb2
 
 
 class ChatStub(object):
-  # missing associated documentation comment in .proto file
-  pass
+  """Servicio de Chat para en envío y recepción de mensajes. 
+  """
 
   def __init__(self, channel):
     """Constructor.
@@ -27,8 +27,8 @@ class ChatStub(object):
 
 
 class ChatServicer(object):
-  # missing associated documentation comment in .proto file
-  pass
+  """Servicio de Chat para en envío y recepción de mensajes. 
+  """
 
   def SendMsg(self, request, context):
     # missing associated documentation comment in .proto file
@@ -64,8 +64,10 @@ def add_ChatServicer_to_server(servicer, server):
 
 
 class UsersStub(object):
-  # missing associated documentation comment in .proto file
-  pass
+  """Servicio de Usuarios para el administración de estos. 
+  Permite la conexión de clientes al chat, obtención del listado
+  de usuarios y la desconexión. 
+  """
 
   def __init__(self, channel):
     """Constructor.
@@ -91,8 +93,10 @@ class UsersStub(object):
 
 
 class UsersServicer(object):
-  # missing associated documentation comment in .proto file
-  pass
+  """Servicio de Usuarios para el administración de estos. 
+  Permite la conexión de clientes al chat, obtención del listado
+  de usuarios y la desconexión. 
+  """
 
   def Join(self, request, context):
     # missing associated documentation comment in .proto file
@@ -140,8 +144,9 @@ def add_UsersServicer_to_server(servicer, server):
 
 
 class MessagesServiceStub(object):
-  # missing associated documentation comment in .proto file
-  pass
+  """Servicio de Almacenamiento de mensajes. Permite guardar temporalmente
+  los mensajes y entregar una lista de estos al cliente que lo solicite. 
+  """
 
   def __init__(self, channel):
     """Constructor.
@@ -162,8 +167,9 @@ class MessagesServiceStub(object):
 
 
 class MessagesServiceServicer(object):
-  # missing associated documentation comment in .proto file
-  pass
+  """Servicio de Almacenamiento de mensajes. Permite guardar temporalmente
+  los mensajes y entregar una lista de estos al cliente que lo solicite. 
+  """
 
   def SaveMessage(self, request, context):
     # missing associated documentation comment in .proto file
