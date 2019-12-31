@@ -16,13 +16,12 @@ class Client:
         exit = False
         while exit == False:
             username = input("Ingrese nombre de usuario: ")
-            self.user_id = username
             
             #Falta verificar aca cual es la nueva respuesta en rabbitmq sin stub.join
             #JoinChat aun no esta definida
             response = self.JoinChat(username)
 
-            if response.opt:
+            if response:
                 print("Logueado correctamente")
                 self.username = username
                 exit = True
@@ -30,9 +29,12 @@ class Client:
             else:
                 print("Nombre de usuario no disponible. Ingrese otro nombre de usuario")
         
-        self.channel.queue_declare(queue=self.user_id, durable=True)
+        self.channel.queue_declare(queue=self.username, durable=True)
         self.channel.exchange_declare(exchange='broadcast',
                          exchange_type='fanout')
+        self.channel.exchange_declare(exchange='user_channel',
+                         exchange_type='')
+
         threading.Thread(target=self.get_msgs, daemon=True).start()
 
     
@@ -41,11 +43,11 @@ class Client:
         def callback(ch, method, properties, body):
             print(" R[x] Received %r" % body)
         #Declaramos la cola denuevo (buena practica)
-        self.channel.queue_declare(queue=self.user_id, durable=True)
+        self.channel.queue_declare(queue=self.username, durable=True)
 
-        self.channel.queue_bind(exchange='broadcast', queue=self.user_id)
+        self.channel.queue_bind(exchange='broadcast', queue=self.username)
 
-        self.channel.basic_consume(queue=self.user_id,
+        self.channel.basic_consume(queue=self.username,
                             auto_ack=True,
                             on_message_callback=callback)
 
@@ -67,6 +69,43 @@ class Client:
                                   ))
             print(" [x] Sent 'Hello World!'")
 
+    def JoinChat(self, user):
+        client_producer = user
+        #client_consumer = dest_user
+        
+        print("S[{}] {}".format(client_producer, msg))
+
+        self.channel.basic_publish(
+            exchange = 'user_channel',
+            routing_key ='user_channel_route',
+            body = client_producer,
+            properties = pika.BasicProperties(
+                delivery_mode=2, #2 hace que el mensaje sea persistente
+            ))
+
+        #Esperamos respuesta del server
+        def callback(ch, method, properties, body):
+            print(" R[x] Received %r" % body)
+            if (body=="Ok"):
+                return(True)
+            return(False)
+        #Declaramos exchange para control de usuarios
+        self.channel.exchange_declare(exchange='user_channel', exchange_type='')
+
+        #Declaramos la cola denuevo (buena practica)
+        self.channel.queue_declare(queue=self.username, durable=True)
+
+        #Declaramos a que cola va a enviar el mensaje el exchange
+        self.channel.queue_bind(exchange='user_channel', queue=self.username)
+        
+        #El cliente obtiene el mensaje de la cola de mensajes
+        response = self.channel.basic_consume(
+            queue=self.username, on_message_callback=callback, auto_ack=True)
+
+        self.channel.start_consuming()
+        print(" [x] Sent 'Hello World!'")
+        return(response)
+        
 
     #PENDIENTE
     def get_users(self):
@@ -83,15 +122,15 @@ class Client:
             print(" R[x] Received %r" % body)
 
         #Declaramos la cola denuevo (buena practica)
-        self.channel.queue_declare(queue=self.user_id, durable=True)
+        self.channel.queue_declare(queue=self.username, durable=True)
 
-        self.channel.queue_bind(exchange='broadcast', queue=self.user_id)
+        self.channel.queue_bind(exchange='broadcast', queue=self.username)
 
         
 
         print("Lista de mensajes enviados: ")
         print("-----------------------------")
-        self.channel.basic_consume(queue=self.user_id,
+        self.channel.basic_consume(queue=self.username,
                             auto_ack=True,
                             on_message_callback=callback)
 
