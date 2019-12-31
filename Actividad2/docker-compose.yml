@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  server:
+    build: server/
+    command: python server.py
+    volumes:
+      - ./server/:/server
+      - ./protos:/server/protos/
+
+  client:
+    build: client/
+    # command: python client.py
+    # Test
+    command: tail -f /dev/null
+    #command: python client.py
+    volumes:
+      - ./protos:/client/protos/
+    depends_on:
+      - server
+      
