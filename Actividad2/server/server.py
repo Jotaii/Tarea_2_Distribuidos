@@ -5,55 +5,40 @@ import pika
 import os
 import time
 
+import sys
 
-class Chat():
+time.sleep(5)
+chats = []
+users = []
 
-    def __init__(self):
-        self.chats = []
-        self.users = []
+connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
+channel = connection.channel()
 
-        time.sleep(10)
-        #amqp_url = os.environ['AMQP_URL']
-        #parameters = pika.URLParameters(amqp_url)
-        #self.connection = pika.SelectConnection(parameters)
-        self.connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
-        self.channel = self.connection.channel()
+#channel.queue_declare(queue="server_receive_user", durable=True)
+channel.queue_declare(queue="server_pending_messages", durable=True)
 
-        self.channel.queue_declare(queue="server_receive_user", durable=True)
-        self.channel.queue_declare(queue="server_pending_messages", durable=True)
+channel.exchange_declare(exchange='user_channel', exchange_type='direct')
+channel.exchange_declare(exchange='broadcast', exchange_type='fanout')
 
-        self.channel.exchange_declare(exchange='broadcast', exchange_type='fanout')
-        self.channel.exchange_declare(exchange='user_channel', exchange_type='direct')
+def on_request(ch, method, props, body):
+    #response = "[USER ID]: {}".format(body)
+    response = body
+    channel.basic_publish(exchange='broadcast', 
+        routing_key="", 
+        body=response,
+        properties = pika.BasicProperties(
+            content_type='text/plain', 
+            delivery_mode=2)
+    )
 
+    channel.basic_ack(delivery_tag=method.delivery_tag)
 
-    def SendMsg(self):
+    #f = open("log.txt", "a")
+    #f.write("[" + request.client_id + "]: " + request.message + "\n")
+    #f.write(str(body))
+    #f.close()
 
-        #Ver como hacer el log
-        f = open("log.txt", "a")
-        f.write("[" + request.client_id + "]: " + request.message + "\n")
-        f.close()
+channel.basic_qos(prefetch_count=1)
+channel.basic_consume(queue='server_pending_messages', on_message_callback=on_request)
 
-        def on_request(ch, method, props, body):
-            
-            response = "[USER ID]: {}".format(body)
-
-            self.channel.basic_publish(exchange='broadcast',
-                            routing_key="",
-                            body=response)
-
-            self.channel.basic_ack(delivery_tag=method.delivery_tag)
-
-        #Recibe el elemento de la cola y le hace broadcast
-        self.channel.basic_consume(queue='server_pending_mesagges', on_message_callback=on_request)
-        
-    def Start(self):
-        self.channel.start_consuming()
-
-def serve():
-    #Hacer correr el servidor
-    server = Chat()
-    server.Start()
-
-if __name__ == '__main__':
-    logging.basicConfig()
-    serve()
+channel.start_consuming()

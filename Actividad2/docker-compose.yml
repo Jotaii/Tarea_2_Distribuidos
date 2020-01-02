@@ -12,6 +12,8 @@ services:
     environment: 
       AMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
     command: python server.py
+    volumes:
+      - ./server/:/server
     depends_on: 
       - rabbitmq
 
