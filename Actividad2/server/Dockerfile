@@ -1,8 +1,9 @@
 FROM python:latest
 
-RUN python -m pip install grpcio \
-    && python -m pip install grpcio-tools
+RUN pip install pika
 
-EXPOSE 50051
+ENV PYTHONUNBUFFERED=1
+
+COPY server.py /server/
 
 WORKDIR /server/

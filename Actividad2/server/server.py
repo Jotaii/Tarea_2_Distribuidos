@@ -2,6 +2,8 @@ from concurrent import futures
 import logging
 
 import pika
+import os
+import time
 
 
 class Chat():
@@ -10,17 +12,18 @@ class Chat():
         self.chats = []
         self.users = []
 
-        self.connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+        time.sleep(10)
+        #amqp_url = os.environ['AMQP_URL']
+        #parameters = pika.URLParameters(amqp_url)
+        #self.connection = pika.SelectConnection(parameters)
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
         self.channel = self.connection.channel()
 
         self.channel.queue_declare(queue="server_receive_user", durable=True)
         self.channel.queue_declare(queue="server_pending_messages", durable=True)
 
-        self.channel.exchange_declare(exchange='broadcast',
-                         exchange_type='fanout')
-        self.channel.exchange_declare(exchange='user_channel',
-                         exchange_type='')
-
+        self.channel.exchange_declare(exchange='broadcast', exchange_type='fanout')
+        self.channel.exchange_declare(exchange='user_channel', exchange_type='direct')
 
 
     def SendMsg(self):

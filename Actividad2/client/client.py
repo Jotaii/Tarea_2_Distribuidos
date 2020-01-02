@@ -2,15 +2,20 @@ from __future__ import print_function
 import logging
 import socket
 import threading
-
+import time
 import pika
-
+import os
 
 class Client:
 
     def __init__(self):
-
-        self.connection = pika.BlockingConnection(pika.ConnectionParameters('server:50051'))
+        # Conexión con RabbitMQ
+        print("Iniciando conexión con RabbitMQ, por favor espere...")
+        time.sleep(10)
+        amqp_url = os.environ['AMQP_URL']
+        parameters = pika.URLParameters(amqp_url)
+        self.connection = pika.SelectConnection(parameters)
+        #self.connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
         self.channel = self.connection.channel()
 
         exit = False
