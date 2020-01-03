@@ -11,7 +11,7 @@ import uuid
 
 
 time.sleep(5)
-chats = []
+chats = {}
 users = {}
 logged_users = []
 
@@ -28,90 +28,115 @@ channel.exchange_declare(exchange='broadcast', exchange_type='fanout')
 def on_request(ch, method, props, body):
     user_message_string = body.decode("utf-8")
     user_message_json = json.loads(user_message_string)
-
+    now = datetime.now()
+    
     request_type = user_message_json["type"]
-    username = user_message_json["username"]
+    client_uuid = str(user_message_json["client_uuid"])
 
+    timestamp = datetime.timestamp(now)
+
+    # Registro de usuario único en el server.
     if request_type == "register":
+        username = user_message_json["username"]
         password = user_message_json["password"]
-        client_uuid = str(user_message_json["uuid"])
+        response = "nope"
 
         if username not in users.keys():
             users[username] = password
-   
-            response_message = {
-                'type': "register-confirm",
-                'response': "ok",
-                'uuid': client_uuid
-            }
-
-            channel.basic_publish(
-                exchange='user_channel', 
-                routing_key=client_uuid, 
-                body="ok")
-
+            response = "ok"
             logged_users.append(username)
 
-        else:
-            channel.basic_publish(
-                exchange='user_channel', 
-                routing_key=client_uuid, 
-                body="not ok")
-
-    elif request_type == "login":
-        password = user_message_json["password"]
-        client_uuid = str(user_message_json["uuid"])
-
-        if username not in users.keys() or username in logged_users:
-            response = "not ok"
-
-        else:
-
-            if users[username] == password:
-                response = "ok"
-                logged_users.append(username)
-            
-            else:
-                response = "not ok"
-
-        now = datetime.now()
-        timestamp = datetime.timestamp(now)
-
-        server_response = {
-            'type': "login_confirm",
+        response_message = {
             'id': str(uuid.uuid4()),
+            'type': "register",
             'response': response,
+            'uuid': client_uuid,
             'timestamp': timestamp
         }
 
-        body_response = json.dumps(server_response)
+        body_response = json.dumps(response_message)
 
         channel.basic_publish(
             exchange='user_channel', 
             routing_key=client_uuid, 
             body=body_response)
 
+    # Inicio de sesión.
+    elif request_type == "login":
+        username = user_message_json["username"]
+        password = user_message_json["password"]
+        response = "nope"
+
+        # Usuario existe y no está logueado
+        if username in users.keys():
+            # Contraseñas coinciden
+            if users[username] == password:
+                response = "ok"
+                logged_users.append(username)                
+
+        response_message = {
+            'id': str(uuid.uuid4()),
+            'type': "login",
+            'response': response,
+            'uuid': client_uuid,
+            'timestamp': timestamp
+        }
+
+        body_response = json.dumps(response_message)
+
+        channel.basic_publish(
+            exchange='user_channel', 
+            routing_key=client_uuid, 
+            body=body_response)
+    
+    # Broadcast de mensaje de usuario.
     elif request_type == "message":
+        username = user_message_json["username"]
+
+        if username not in chats:
+            chats[username] = [user_message_string]
+
+        else:
+            chats[username].append(user_message_string)
+
         channel.basic_publish(
             exchange='broadcast', 
             routing_key='', 
             body=body
         )
-
-        """
-        f = open("log.txt", "a+")
-        f.write(str(body))
-        f.close()
-        """
         
+    # Envío de lista de usuarios conectados.
     elif request_type == "users_list":
-        pass
 
+        response_message = {
+            'id': str(uuid.uuid4()),
+            'type': "users_list",
+            'response': logged_users
+        }
+
+        body_response = json.dumps(response_message)
+
+        channel.basic_publish(
+            exchange='user_channel', 
+            routing_key=client_uuid, 
+            body=body_response)
+
+    # Envío de lista de mensajes enviados por el usuario que lo solicita.
     elif request_type == "user_messages_list":
-        pass
+        username = user_message_json["username"]
 
-    else:
-        pass
+        response_message = {
+            'id': str(uuid.uuid4()),
+            'type': "user_messages",
+            'response': chats[username]
+        }
+
+        body_response = json.dumps(response_message)
+
+        channel.basic_publish(
+            exchange='user_channel', 
+            routing_key=client_uuid, 
+            body=body_response)
 
     channel.basic_ack(delivery_tag=method.delivery_tag)
 

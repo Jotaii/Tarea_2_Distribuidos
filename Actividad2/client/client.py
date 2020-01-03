@@ -16,115 +16,15 @@ class Client:
     def __init__(self):
         print("Iniciando conexión con RabbitMQ, por favor espere...")
         #time.sleep(10)
+
         self.client_uuid = uuid.uuid4()
+        self.username = ""
+        self.is_logged = False
 
         self.connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
         self.channel = self.connection.channel()
 
-        self.channel.exchange_declare(exchange='user_channel', exchange_type='direct')
-
-    def register(self):
-        
-        self.cont = True
-        while self.cont:
-            result = self.channel.queue_declare(queue=str(self.client_uuid), exclusive=True)
-            queue_name = result.method.queue
-
-            self.channel.queue_bind(exchange='user_channel', queue=queue_name)
-
-            username = input("Ingrese un nombre de usuario: ")
-            password = input("Ingrese una contraseña: ")
-
-            message = {
-                'type': "register",
-                'username': username,
-                'password': password,
-                'uuid': str(self.client_uuid)
-                }
-
-            body_message = json.dumps(message)
-
-            self.channel.basic_publish(
-                exchange='',
-                routing_key='server_pending_messages',
-                body=body_message,
-                properties = pika.BasicProperties(content_type='text/plain', delivery_mode=2)
-            )
-
-            def callback(ch, method, properties, body):
-
-                if body.decode("utf-8") == "ok":
-                    self.username = username
-                    self.channel.basic_cancel(consumer_tag=str(self.client_uuid))
-                    self.channel.queue_delete(queue=queue_name)
-                    self.cont = False
-                    print("Se ha registrado correctamente")
-                
-                else:
-                    self.channel.basic_cancel(consumer_tag=str(self.client_uuid))
-                    self.channel.queue_delete(queue=queue_name)
-                    print("Usuario ya registrado")
-
-            self.channel.basic_consume(
-                queue=queue_name, on_message_callback=callback, auto_ack=True, consumer_tag=str(self.client_uuid))
-
-            self.channel.start_consuming()
-
-    def login(self):
-        self.cont = True
-
-        while self.cont:
-            result = self.channel.queue_declare(queue=str(self.client_uuid), exclusive=True)
-            queue_name = result.method.queue
-
-            self.channel.queue_bind(exchange='user_channel', queue=queue_name)
-            username = input("Ingrese un nombre de usuario: ")
-            password = input("Ingrese su contraseña: ")
-
-            now = datetime.now()
-            timestamp = datetime.timestamp(now)
-
-            request_json = {
-                'id': str(uuid.uuid4()),
-                'type': "login",
-                'username': username,
-                'password': password,
-                'uuid': str(self.client_uuid),
-                'timestamp': timestamp
-                }
-
-            request = json.dumps(request_json)
-
-            self.channel.basic_publish(
-                exchange='',
-                routing_key='server_pending_messages',
-                body=request,
-                properties = pika.BasicProperties(content_type='text/plain', delivery_mode=2)
-            )
-
-            def callback(ch, method, properties, body):
-                server_response_string = body.decode("utf-8")
-                server_response_json = json.loads(server_response_string)
-
-                if server_response_json["response"] == "ok":
-                    self.username = username
-                    self.channel.basic_cancel(consumer_tag=str(self.client_uuid))
-                    self.channel.queue_delete(queue=queue_name)
-                    self.cont = False
-                    print("Logueado correctamente")
-                
-                else:
-                    self.channel.basic_cancel(consumer_tag=str(self.client_uuid))
-                    self.channel.queue_delete(queue=queue_name)
-                    print("Credenciales inválidas o usuario ya logueado")
-
-            self.channel.basic_consume(
-                queue=queue_name, on_message_callback=callback, auto_ack=True, consumer_tag=str(self.client_uuid))
-
-            self.channel.start_consuming()
-
     def _get_msgs(self):
-        # VER SI SE PUEDE UNIFICAR EN 1 CHANNEL
         connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
         channel = connection.channel()
 
@@ -141,6 +41,7 @@ class Client:
 
             user = message_received["username"]
             text = message_received["message"]
+            timestamp = message_received["timestamp"]
 
             print("[{}]: {}".format(user, text))
         
@@ -152,17 +53,120 @@ class Client:
     def get_msgs(self):
         threading.Thread(target=self._get_msgs, daemon=True).start()
 
-    def send(self, msg):
-        if msg != '':
-            now = datetime.now()
-            timestamp = datetime.timestamp(now)
+    def _get_direct_messages(self):
+        connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
+        channel = connection.channel()
 
-            message = {
-                'type': "message",
-                'id': str(uuid.uuid4()),
-                'username': self.username,
-                'message': msg,
-                'timestamp': timestamp
+        result = channel.queue_declare(queue=str(self.client_uuid), exclusive=True)
+        queue_name = result.method.queue
+
+        channel.queue_bind(exchange='user_channel', queue=queue_name)
+
+        def callback(ch, method, properties, body):
+            server_response = body.decode("utf-8")
+            server_response_json = json.loads(server_response)    
+            response_type = server_response_json["type"]            
+            response = server_response_json["response"]
+
+            if response_type == "register":
+                
+                if response == "ok":
+                    self.is_logged = True
+                    print("Registro correcto")
+
+                else:
+                    self.is_logged = False
+                    print("Usuario ya registrado")
+                
+                self.done_checking.set()
+
+            elif response_type == "login":
+                
+                if response == "ok":
+                    self.is_logged = True
+                    print("Inicio correcto")
+
+                else:
+                    print("Credenciales inválidas")
+                
+                self.done_checking.set()
+
+            elif response_type == "user_messages":
+                for message in response:
+                    print(message)
+
+            elif response_type == "users_list":
+                for user in response:
+                    print(user)
+
+            else:
+                print("Problemas con el servidor")
+
+        channel.basic_consume(
+            queue=queue_name, on_message_callback=callback, auto_ack=True)
+
+        channel.start_consuming()
+
+    def get_direct_messages(self):
+        threading.Thread(target=self._get_direct_messages, daemon=True).start()
+
+    def send(self, message, option):
+        now = datetime.now()
+        timestamp = datetime.timestamp(now)
+
+        if message != '':
+
+            if option == "login":
+                credentials = message
+
+                message = {
+                    'id': str(uuid.uuid4()),
+                    'type': "login",
+                    'username': credentials["username"],
+                    'password': credentials["password"],
+                    'client_uuid': str(self.client_uuid),
+                    'timestamp': timestamp
+                }
+
+            elif option == "register":
+                credentials = message
+
+                message = {
+                    'id': str(uuid.uuid4()),
+                    'type': "register",
+                    'username': credentials["username"],
+                    'password': credentials["password"],
+                    'client_uuid': str(self.client_uuid),
+                    'timestamp': timestamp
+                }
+
+            elif option == "text":
+                text = message
+                
+                message = {
+                    'id': str(uuid.uuid4()),
+                    'type': "message",
+                    'username': self.username,
+                    'client_uuid': str(self.client_uuid),
+                    'message': text,
+                    'timestamp': timestamp
+                }
+
+            elif option == "users_list":
+                message = {
+                    'id': str(uuid.uuid4()),
+                    'type': "users_list",
+                    'client_uuid': str(self.client_uuid),
+                    'timestamp': timestamp
+                }
+
+            elif option == "user_messages":
+                message = {
+                    'id': str(uuid.uuid4()),
+                    'type': "user_messages_list",
+                    'username': self.username,
+                    'client_uuid': str(self.client_uuid),
+                    'timestamp': timestamp
                 }
 
             body_message = json.dumps(message)
@@ -173,74 +177,79 @@ class Client:
                 body=body_message,
                 properties = pika.BasicProperties(content_type='text/plain', delivery_mode=2)
             )
-            
 
-    #PENDIENTE
-    def get_users(self):
-        print("Lista de usuarios conectados: ")
-        #users_list = self.users_stub.GetUsers(chat_pb2.Empty())
-        
-        #for user in users_list.users:
-        #    print(user.user_id)
+    def connect(self, opt):
 
+        if opt == 'login':
+            request_type = "login"
+            print("Iniciar sesión")
+            print("-----------------------------")
 
-    def get_user_messages(self):
+        elif opt == "register":
+            request_type = "register"
+            print("Crear usuario")
+            print("-----------------------------")
 
-        def callback(ch, method, properties, body):
-            print(" R[x] Received %r" % body)
+        self.done_checking = threading.Event()
 
-        #Declaramos la cola denuevo (buena practica)
-        self.channel.queue_declare(queue=self.username, durable=True)
+        while not self.is_logged:
+            username = input("Ingrese nombre de usuario: ")
+            password = input("Ingrese contraseña: ")
 
-        self.channel.queue_bind(exchange='broadcast', queue=self.username)
+            if username == "" or password == "":
+                print("No puede ingresar campos vacíos")
 
-        
+            else:
+                now = datetime.now()
+                timestamp = datetime.timestamp(now)
 
-        print("Lista de mensajes enviados: ")
-        print("-----------------------------")
-        self.channel.basic_consume(queue=self.username,
-                            auto_ack=True,
-                            on_message_callback=callback)
+                message = {
+                    'username': username,
+                    'password': password
+                }
 
-        print(' [*] Waiting for messages. To exit press CTRL+C')
-        self.channel.start_consuming()
+                self.send(message, request_type)
+                self.done_checking.wait()
+                self.done_checking.clear()
 
-    def disconnect(self):
-        self.connection.close()
-
-    
+        self.username = username
 
 if __name__ == '__main__':
     logging.basicConfig()
-    c = Client()
+    client = Client()
+    client.get_direct_messages()
+    
+    connected = False
+    while not connected:
+        print("Bienvenido a Chat No-RPC")
+        print("1) Iniciar sesión")
+        print("2) Registrar usuario")
+        user_input = input("Escoja una opción: ")
 
-    print("1) Conectarse")
-    print("2) Registrarse")
-    user_input = input("Escoja una opción: ")
+        if user_input == '1':
+            client.connect("login")
+            connected = True
 
-    if user_input == '1':
-        c.login()
-        c.get_msgs()
+        elif user_input == '2':
+            client.connect("register")
+            connected = True
 
-    elif user_input == '2':
-        c.register()
-        c.get_msgs()
+        else:
+            print("Opción inválida")
 
-    else:
-        print("Opción inválida")
+    client.get_msgs()
 
-    # Comandos de usuario
     while True:
         user_input = input()
         sys.stdout.write("\033[F")
 
         # Comando para ver los clientes conectados al chat.
         if user_input == "/users":
-            c.get_users()
+            client.send(user_input, "users_list")
 
         # Comando para ver los mensajes enviados por el cliente.
-        elif user_input == "/mymessages":
-            c.get_user_messages()
+        elif user_input == "/mymgs":
+            client.send(user_input, "user_messages")
 
         # Comando para desconectarse del chat.
         elif user_input == "/exit":
@@ -249,4 +258,4 @@ if __name__ == '__main__':
 
         # Envío de un mensaje normal.
         else:
-            c.send(user_input)
+            client.send(user_input, "text")
