@@ -164,6 +164,11 @@ class MessagesServiceStub(object):
         request_serializer=chat__pb2.User.SerializeToString,
         response_deserializer=chat__pb2.UserMessages.FromString,
         )
+    self.DeleteMessages = channel.unary_unary(
+        '/grpc.MessagesService/DeleteMessages',
+        request_serializer=chat__pb2.User.SerializeToString,
+        response_deserializer=chat__pb2.Empty.FromString,
+        )
 
 
 class MessagesServiceServicer(object):
@@ -185,6 +190,13 @@ class MessagesServiceServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def DeleteMessages(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_MessagesServiceServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -197,6 +209,11 @@ def add_MessagesServiceServicer_to_server(servicer, server):
           servicer.GetAllMessages,
           request_deserializer=chat__pb2.User.FromString,
           response_serializer=chat__pb2.UserMessages.SerializeToString,
+      ),
+      'DeleteMessages': grpc.unary_unary_rpc_method_handler(
+          servicer.DeleteMessages,
+          request_deserializer=chat__pb2.User.FromString,
+          response_serializer=chat__pb2.Empty.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

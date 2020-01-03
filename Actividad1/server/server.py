@@ -7,6 +7,8 @@ import grpc
 import chat_pb2 as chat_pb2
 import chat_pb2_grpc as chat_pb2_grpc
 
+from google.protobuf.timestamp_pb2 import Timestamp
+
 
 class Chat(chat_pb2_grpc.ChatServicer):
     """
@@ -27,14 +29,28 @@ class Chat(chat_pb2_grpc.ChatServicer):
         La ejecución de este método transporta el mensaje escrito por un cliente mediante 
         stubs. Además, registra en un archivo todos los mensajes que se han enviado.
         """
-        f = open("log.txt", "a")
-        
-        username = request.id.split("-")[0]
-        seconds = request.timestamp.seconds
-        dt_object = datetime.fromtimestamp(seconds)
-        date_time = dt_object.strftime("%m/%d/%Y, %H:%M:%S")
+        timestamp = Timestamp()
+        timestamp.GetCurrentTime()
 
-        f.write("[{} - {} ] {}\n".format(date_time, username, request.message))
+        username = request.id.split("/")[0]
+        # Se reemplaza el timestamp del cliente por el del server
+        # para mantener consistencia con los tiempos
+        client_seconds = request.timestamp.seconds
+        server_seconds = timestamp.seconds
+
+        dt_object_client = datetime.fromtimestamp(client_seconds)
+        date_time_client = dt_object_client.strftime("%m/%d/%Y, %H:%M:%S")
+        dt_object_server = datetime.fromtimestamp(server_seconds)
+        date_time_server = dt_object_server.strftime("%m/%d/%Y, %H:%M:%S")
+
+        f = open("log.txt", "a")
+        #f.write("[{} - {} ] {}\n".format(date_time, username, request.message))
+        f.write("\nRegistro de mensaje: \n")
+        f.write("ID Mensaje: " + request.id + "\n")
+        f.write("ID Cliente: " + username + "\n") 
+        f.write("Mensaje: " + request.message + "\n")
+        f.write("Fecha de envio en cliente: " + date_time_client + "\n")
+        f.write("Fecha recepcion en server: " + date_time_server +"\n")
         f.close()
 
         self.chats.append(request)
@@ -124,7 +140,7 @@ class MessagesServices(chat_pb2_grpc.MessagesServiceServicer):
         Mediante un diccionario, guarda ordenadamente los mensajes según el ID del cliente que lo
         envió.
         """
-        username = request.id.split("-")[0]
+        username = request.id.split("/")[0]
 
         if username not in self.user_messages:
             self.user_messages[username] = [request]
@@ -146,7 +162,17 @@ class MessagesServices(chat_pb2_grpc.MessagesServiceServicer):
 
         user_messages.msgs.extend(self.user_messages[username])
         return user_messages
+
+    def DeleteMessages(self, request, context):
+        """
+        Un método que elimina todos los mensajes almacenados por el usuario que solicitó la desconexión.
+        """
+        username = request.user_id
         
+        self.user_messages.pop(username, None)
+
+        return chat_pb2.Empty()
+
 
 def serve():
     """

@@ -76,7 +76,7 @@ def on_request(ch, method, props, body):
             body=body_response
         )
 
-        f = open("log.txt", "a+")
+        f = open("log.txt", "a")
         
         f.write("Registro de mensaje: \n")
         dt_object = datetime.fromtimestamp(user_message_json["timestamp"])

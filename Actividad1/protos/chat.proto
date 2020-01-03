@@ -25,6 +25,7 @@ service Users {
 service MessagesService {
     rpc SaveMessage (Msg) returns (Empty);
     rpc GetAllMessages (User) returns (UserMessages);
+    rpc DeleteMessages (User) returns (Empty);
 }
 
 /* Mensaje auxiliar para la asignación de ID para clientes. */
