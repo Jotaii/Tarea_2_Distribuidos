@@ -21,11 +21,11 @@ class Client:
         self.username = ""
         self.is_logged = False
 
-        self.connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq', heartbeat=0))
         self.channel = self.connection.channel()
 
     def _get_msgs(self):
-        connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
+        connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq', heartbeat=0))
         channel = connection.channel()
 
         channel.exchange_declare(exchange='broadcast', exchange_type='fanout')
@@ -42,11 +42,14 @@ class Client:
             user = message_received["username"]
             text = message_received["message"]
             timestamp = message_received["timestamp"]
+            dt_object = datetime.fromtimestamp(timestamp)
+            date_time = dt_object.strftime("%m/%d/%Y, %H:%M:%S")
 
-            print("[{}]: {}".format(user, text))
+            print("[{} - {}]: {}".format(date_time, user, text))
         
         channel.basic_consume(
-            queue=queue_name, on_message_callback=callback, auto_ack=True)
+            queue=queue_name, on_message_callback=callback, auto_ack=True,
+            consumer_tag=self.username)
         
         channel.start_consuming()
         
@@ -54,7 +57,7 @@ class Client:
         threading.Thread(target=self._get_msgs, daemon=True).start()
 
     def _get_direct_messages(self):
-        connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
+        connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq', heartbeat=0))
         channel = connection.channel()
 
         result = channel.queue_declare(queue=str(self.client_uuid), exclusive=True)
@@ -72,11 +75,11 @@ class Client:
                 
                 if response == "ok":
                     self.is_logged = True
-                    print("Registro correcto")
+                    print("Registro correcto. ¡Comience a chatear!")
 
                 else:
                     self.is_logged = False
-                    print("Usuario ya registrado")
+                    print("Usuario ya registrado\n")
                 
                 self.done_checking.set()
 
@@ -84,20 +87,36 @@ class Client:
                 
                 if response == "ok":
                     self.is_logged = True
-                    print("Inicio correcto")
+                    print("Inicio correcto. ¡Comience a chatear!")
 
                 else:
-                    print("Credenciales inválidas")
+                    print("Credenciales inválidas o usuario ya logueado\n")
                 
                 self.done_checking.set()
 
             elif response_type == "user_messages":
-                for message in response:
-                    print(message)
+                print("\n\n-----------------------------")
+                print("Mensajes enviados:")
+
+                for sent_message in response:
+                    message = json.loads(sent_message)
+
+                    user = message["username"]
+                    text = message["message"]
+                    timestamp = message["timestamp"]
+                    dt_object = datetime.fromtimestamp(timestamp)
+                    date_time = dt_object.strftime("%m/%d/%Y, %H:%M:%S")
+
+                    print("[{} - {}]: {}".format(date_time, user, text))
+
+                print("-----------------------------\n")
 
             elif response_type == "users_list":
+                print("\n\n-----------------------------")
+                print("Lista de usuarios:")
                 for user in response:
                     print(user)
+                print("-----------------------------\n")
 
             else:
                 print("Problemas con el servidor")
@@ -156,6 +175,7 @@ class Client:
                 message = {
                     'id': str(uuid.uuid4()),
                     'type': "users_list",
+                    'username': self.username,
                     'client_uuid': str(self.client_uuid),
                     'timestamp': timestamp
                 }
@@ -164,6 +184,15 @@ class Client:
                 message = {
                     'id': str(uuid.uuid4()),
                     'type': "user_messages_list",
+                    'username': self.username,
+                    'client_uuid': str(self.client_uuid),
+                    'timestamp': timestamp
+                }
+
+            elif option == "disconnect":
+                message = {
+                    'id': str(uuid.uuid4()),
+                    'type': "disconnect",
                     'username': self.username,
                     'client_uuid': str(self.client_uuid),
                     'timestamp': timestamp
@@ -182,13 +211,13 @@ class Client:
 
         if opt == 'login':
             request_type = "login"
-            print("Iniciar sesión")
-            print("-----------------------------")
+            print("\n-----------------------------")
+            print("Inicio de sesión")
 
         elif opt == "register":
             request_type = "register"
-            print("Crear usuario")
-            print("-----------------------------")
+            print("\n-----------------------------")
+            print("Creación de usuario")
 
         self.done_checking = threading.Event()
 
@@ -200,9 +229,6 @@ class Client:
                 print("No puede ingresar campos vacíos")
 
             else:
-                now = datetime.now()
-                timestamp = datetime.timestamp(now)
-
                 message = {
                     'username': username,
                     'password': password
@@ -214,6 +240,10 @@ class Client:
 
         self.username = username
 
+    def disconnect(self):
+        self.send("disconnect", "disconnect")
+        self.connection.close()
+
 if __name__ == '__main__':
     logging.basicConfig()
     client = Client()
@@ -221,10 +251,12 @@ if __name__ == '__main__':
     
     connected = False
     while not connected:
-        print("Bienvenido a Chat No-RPC")
+        print("\n-----------------------------")
+        print("Bienvenido al Chat No-RPC")
         print("1) Iniciar sesión")
-        print("2) Registrar usuario")
-        user_input = input("Escoja una opción: ")
+        print("2) Entrar como nuevo usuario")
+        print("-----------------------------")
+        user_input = input("\nEscoja una opción: ")
 
         if user_input == '1':
             client.connect("login")
@@ -237,25 +269,35 @@ if __name__ == '__main__':
         else:
             print("Opción inválida")
 
+
+    print("-----------------------------\n")
+    
     client.get_msgs()
 
     while True:
-        user_input = input()
-        sys.stdout.write("\033[F")
+        try:
+            user_input = input()
+            sys.stdout.write("\033[F")
+            
+            # Comando para ver los clientes conectados al chat.
+            if user_input == "/users":
+                client.send(user_input, "users_list")
 
-        # Comando para ver los clientes conectados al chat.
-        if user_input == "/users":
-            client.send(user_input, "users_list")
+            # Comando para ver los mensajes enviados por el cliente.
+            elif user_input == "/mymgs":
+                client.send(user_input, "user_messages")
 
-        # Comando para ver los mensajes enviados por el cliente.
-        elif user_input == "/mymgs":
-            client.send(user_input, "user_messages")
+            # Comando para desconectarse del chat.
+            elif user_input == "/exit":
+                client.disconnect()
+                break
 
-        # Comando para desconectarse del chat.
-        elif user_input == "/exit":
-            c.disconnect()
+            # Envío de un mensaje normal.
+            else:
+                client.send(user_input, "text")
+
+        except KeyboardInterrupt:
+            client.disconnect()
             break
 
-        # Envío de un mensaje normal.
-        else:
-            client.send(user_input, "text")
+    print("\n\nCerrando conexión... ¡Hasta pronto!")
