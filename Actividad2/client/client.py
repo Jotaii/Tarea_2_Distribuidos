@@ -15,7 +15,7 @@ class Client:
 
     def __init__(self):
         print("Iniciando conexión con RabbitMQ, por favor espere...")
-        #time.sleep(10)
+        time.sleep(5)
 
         self.client_uuid = uuid.uuid4()
         self.username = ""
@@ -71,32 +71,21 @@ class Client:
             response_type = server_response_json["type"]            
             response = server_response_json["response"]
 
-            if response_type == "register":
-                
-                if response == "ok":
-                    self.is_logged = True
-                    print("Registro correcto. ¡Comience a chatear!")
-
-                else:
-                    self.is_logged = False
-                    print("Usuario ya registrado\n")
-                
-                self.done_checking.set()
-
-            elif response_type == "login":
+            if response_type == "login":
                 
                 if response == "ok":
                     self.is_logged = True
                     print("Inicio correcto. ¡Comience a chatear!")
 
                 else:
-                    print("Credenciales inválidas o usuario ya logueado\n")
+                    print("Nombre de usuario ocupado\n")
                 
                 self.done_checking.set()
 
             elif response_type == "user_messages":
                 print("\n\n-----------------------------")
-                print("Mensajes enviados:")
+                print("Mensajes enviados")
+                print("-----------------------------")
 
                 for sent_message in response:
                     message = json.loads(sent_message)
@@ -108,16 +97,16 @@ class Client:
                     date_time = dt_object.strftime("%m/%d/%Y, %H:%M:%S")
 
                     print("[{} - {}]: {}".format(date_time, user, text))
+                print("")
 
-                print("-----------------------------\n")
 
             elif response_type == "users_list":
                 print("\n\n-----------------------------")
-                print("Lista de usuarios:")
+                print("Lista de usuarios")
+                print("-----------------------------")
                 for user in response:
                     print(user)
-                print("-----------------------------\n")
-
+                print("")
             else:
                 print("Problemas con el servidor")
 
@@ -141,20 +130,7 @@ class Client:
                 message = {
                     'id': str(uuid.uuid4()),
                     'type': "login",
-                    'username': credentials["username"],
-                    'password': credentials["password"],
-                    'client_uuid': str(self.client_uuid),
-                    'timestamp': timestamp
-                }
-
-            elif option == "register":
-                credentials = message
-
-                message = {
-                    'id': str(uuid.uuid4()),
-                    'type': "register",
-                    'username': credentials["username"],
-                    'password': credentials["password"],
+                    'username': credentials,
                     'client_uuid': str(self.client_uuid),
                     'timestamp': timestamp
                 }
@@ -207,34 +183,17 @@ class Client:
                 properties = pika.BasicProperties(content_type='text/plain', delivery_mode=2)
             )
 
-    def connect(self, opt):
-
-        if opt == 'login':
-            request_type = "login"
-            print("\n-----------------------------")
-            print("Inicio de sesión")
-
-        elif opt == "register":
-            request_type = "register"
-            print("\n-----------------------------")
-            print("Creación de usuario")
-
+    def connect(self):
         self.done_checking = threading.Event()
 
         while not self.is_logged:
             username = input("Ingrese nombre de usuario: ")
-            password = input("Ingrese contraseña: ")
 
-            if username == "" or password == "":
+            if (username == "") or ('' in username == True):
                 print("No puede ingresar campos vacíos")
 
             else:
-                message = {
-                    'username': username,
-                    'password': password
-                }
-
-                self.send(message, request_type)
+                self.send(username, "login")
                 self.done_checking.wait()
                 self.done_checking.clear()
 
@@ -247,30 +206,25 @@ class Client:
 if __name__ == '__main__':
     logging.basicConfig()
     client = Client()
+
     client.get_direct_messages()
-    
-    connected = False
-    while not connected:
-        print("\n-----------------------------")
-        print("Bienvenido al Chat No-RPC")
-        print("1) Iniciar sesión")
-        print("2) Entrar como nuevo usuario")
-        print("-----------------------------")
-        user_input = input("\nEscoja una opción: ")
 
-        if user_input == '1':
-            client.connect("login")
-            connected = True
-
-        elif user_input == '2':
-            client.connect("register")
-            connected = True
-
-        else:
-            print("Opción inválida")
-
+    print("\n-----------------------------")
+    print("Bienvenido al Chat No-RPC")
+    print("Un chat donde los RPC no son bienvenidos")
+    client.connect()
 
     print("-----------------------------\n")
+
+    print("-----------------------------")
+    print("INFORMACIÓN")
+    print("-----------------------------")
+    print("Se ha conectado al chat como " + client.username)
+    print("Para enviar un mensaje simplemente escriba y presione enter\n")
+    print("Algunos comandos de utilidad:")
+    print("/users: Lista los usuarios conectados")
+    print("/mymgs: Lista sus mensajes enviados")
+    print("/exit: Abandonar chat (o puede usar Ctrl+C directamente)\n")
     
     client.get_msgs()
 

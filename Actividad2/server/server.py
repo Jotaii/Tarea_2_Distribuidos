@@ -12,7 +12,6 @@ import uuid
 
 time.sleep(10)
 chats = {}
-users = {}
 logged_users = []
 
 connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
@@ -34,42 +33,13 @@ def on_request(ch, method, props, body):
 
     timestamp = datetime.timestamp(now)
 
-    # Registro de usuario único en el server.
-    if request_type == "register":
-        password = user_message_json["password"]
-        response = "nope"
-
-        if username not in users.keys():
-            users[username] = password
-            response = "ok"
-            logged_users.append(username)
-
-        response_message = {
-            'id': str(uuid.uuid4()),
-            'type': "register",
-            'response': response,
-            'uuid': client_uuid,
-            'timestamp': timestamp
-        }
-
-        body_response = json.dumps(response_message)
-
-        channel.basic_publish(
-            exchange='user_channel', 
-            routing_key=client_uuid, 
-            body=body_response)
-
     # Inicio de sesión.
-    elif request_type == "login":
-        password = user_message_json["password"]
+    if request_type == "login":
         response = "nope"
 
-        # Usuario existe y no está logueado
-        if username in users.keys() and username not in logged_users:
-            # Contraseñas coinciden
-            if users[username] == password:
-                response = "ok"
-                logged_users.append(username)                
+        if username not in logged_users:
+            response = "ok"
+            logged_users.append(username)                 
 
         response_message = {
             'id': str(uuid.uuid4()),
@@ -107,23 +77,24 @@ def on_request(ch, method, props, body):
         )
 
         f = open("log.txt", "a+")
-        """
-        f.write("Registro de mensaje: ")
+        
+        f.write("Registro de mensaje: \n")
         dt_object = datetime.fromtimestamp(user_message_json["timestamp"])
         date_time = dt_object.strftime("%m/%d/%Y, %H:%M:%S")
-        f.write(date_time+"\n")
         f.write("ID Mensaje: " + user_message_json["id"] + "\n")
         f.write("Usuario: " + username + "\n") 
         f.write("ID Cliente: " + client_uuid + "\n")
         f.write("Mensaje: " + user_message_json["message"] + "\n")
         dt_object = datetime.fromtimestamp(sender_timestamp)
         date_time = dt_object.strftime("%m/%d/%Y, %H:%M:%S")
-        f.write("Hora cliente: " + date_time + "\n\n")
+        f.write("Fecha recepcion en server: " + date_time+"\n")
+        f.write("Fecha de envio en cliente: " + date_time + "\n\n")
         """
         dt_object = datetime.fromtimestamp(user_message_json["timestamp"])
         date_time = dt_object.strftime("%m/%d/%Y, %H:%M:%S")
         text = user_message_json["message"]
         f.write("[{} - {}]: {}\n".format(date_time, username, text))
+        """
         f.close()
         
     # Envío de lista de usuarios conectados.
@@ -143,10 +114,18 @@ def on_request(ch, method, props, body):
 
     # Envío de lista de mensajes enviados por el usuario que lo solicita.
     elif request_type == "user_messages_list":
+        
+        if username in chats:
+            user_messages = chats[username]
+
+        else:
+            user_messages = []
+
+
         response_message = {
             'id': str(uuid.uuid4()),
             'type': "user_messages",
-            'response': chats[username]
+            'response': user_messages
         }
 
         body_response = json.dumps(response_message)
@@ -156,10 +135,11 @@ def on_request(ch, method, props, body):
             routing_key=client_uuid, 
             body=body_response)
 
-    # Usuario se desconecta. Se elimina a usuario de la lista de conectados.
+    # Usuario se desconecta. Se elimina a usuario de la lista de conectados y sus mensajes (sus copias están en log.txt).
     elif request_type == "disconnect":
         username = user_message_json["username"]
         logged_users.remove(username)
+        chats.pop(username, None)
 
     channel.basic_ack(delivery_tag=method.delivery_tag)
 
