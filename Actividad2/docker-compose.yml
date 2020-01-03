@@ -18,18 +18,10 @@ services:
     depends_on: 
       - rabbitmq
 
-  client1:
+  client:
     build: client
     environment:
       AMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
     command: tail -f /dev/null
     depends_on:
       - server
-
-  client2:
-    build: client
-    environment:
-      AMQP_URL: 'amqp://rabbitmq?connection_attempts=5&retry_delay=5'
-    command: tail -f /dev/null
-    depends_on:
-      - client1
