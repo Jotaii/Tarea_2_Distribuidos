@@ -5,180 +5,253 @@ import threading
 import time
 import pika
 import os
+import uuid
+import sys
+import json
+from datetime import datetime
+
 
 class Client:
 
     def __init__(self):
-        # Conexión con RabbitMQ
         print("Iniciando conexión con RabbitMQ, por favor espere...")
-        time.sleep(10)
-        amqp_url = os.environ['AMQP_URL']
-        parameters = pika.URLParameters(amqp_url)
-        self.connection = pika.SelectConnection(parameters)
-        #self.connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
+        time.sleep(5)
+
+        self.client_uuid = uuid.uuid4()
+        self.username = ""
+        self.is_logged = False
+
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq', heartbeat=0))
         self.channel = self.connection.channel()
 
-        exit = False
-        while exit == False:
-            username = input("Ingrese nombre de usuario: ")
-            
-            #Falta verificar aca cual es la nueva respuesta en rabbitmq sin stub.join
-            #JoinChat aun no esta definida
-            response = self.JoinChat(username)
+    def _get_msgs(self):
+        connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq', heartbeat=0))
+        channel = connection.channel()
 
-            if response:
-                print("Logueado correctamente")
-                self.username = username
-                exit = True
+        channel.exchange_declare(exchange='broadcast', exchange_type='fanout')
+
+        result = channel.queue_declare(queue='', exclusive=True)
+        queue_name = result.method.queue
+
+        channel.queue_bind(exchange='broadcast', queue=queue_name)
+
+        def callback(ch, method, properties, body):
+            message_received_string = body.decode("utf-8")
+            message_received = json.loads(message_received_string)
+
+            user = message_received["username"]
+            text = message_received["message"]
+            timestamp = message_received["timestamp"]
+            dt_object = datetime.fromtimestamp(timestamp)
+            date_time = dt_object.strftime("%m/%d/%Y, %H:%M:%S")
+
+            print("[{} - {}]: {}".format(date_time, user, text))
+        
+        channel.basic_consume(
+            queue=queue_name, on_message_callback=callback, auto_ack=True,
+            consumer_tag=self.username)
+        
+        channel.start_consuming()
+        
+    def get_msgs(self):
+        threading.Thread(target=self._get_msgs, daemon=True).start()
+
+    def _get_direct_messages(self):
+        connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq', heartbeat=0))
+        channel = connection.channel()
+
+        result = channel.queue_declare(queue=str(self.client_uuid), exclusive=True)
+        queue_name = result.method.queue
+
+        channel.queue_bind(exchange='user_channel', queue=queue_name)
+
+        def callback(ch, method, properties, body):
+            server_response = body.decode("utf-8")
+            server_response_json = json.loads(server_response)    
+            response_type = server_response_json["type"]            
+            response = server_response_json["response"]
+
+            if response_type == "login":
+                
+                if response == "ok":
+                    self.is_logged = True
+                    print("Inicio correcto. ¡Comience a chatear!")
+
+                else:
+                    print("Nombre de usuario ocupado\n")
+                
+                self.done_checking.set()
+
+            elif response_type == "user_messages":
+                print("\n\n-----------------------------")
+                print("Mensajes enviados")
+                print("-----------------------------")
+
+                for sent_message in response:
+                    message = json.loads(sent_message)
+
+                    user = message["username"]
+                    text = message["message"]
+                    timestamp = message["timestamp"]
+                    dt_object = datetime.fromtimestamp(timestamp)
+                    date_time = dt_object.strftime("%m/%d/%Y, %H:%M:%S")
+
+                    print("[{} - {}]: {}".format(date_time, user, text))
+                print("")
+
+
+            elif response_type == "users_list":
+                print("\n\n-----------------------------")
+                print("Lista de usuarios")
+                print("-----------------------------")
+                for user in response:
+                    print(user)
+                print("")
+            else:
+                print("Problemas con el servidor")
+
+        channel.basic_consume(
+            queue=queue_name, on_message_callback=callback, auto_ack=True)
+
+        channel.start_consuming()
+
+    def get_direct_messages(self):
+        threading.Thread(target=self._get_direct_messages, daemon=True).start()
+
+    def send(self, message, option):
+        now = datetime.now()
+        timestamp = datetime.timestamp(now)
+
+        if message != '':
+
+            if option == "login":
+                credentials = message
+
+                message = {
+                    'id': str(uuid.uuid4()),
+                    'type': "login",
+                    'username': credentials,
+                    'client_uuid': str(self.client_uuid),
+                    'timestamp': timestamp
+                }
+
+            elif option == "text":
+                text = message
+                
+                message = {
+                    'id': str(uuid.uuid4()),
+                    'type': "message",
+                    'username': self.username,
+                    'client_uuid': str(self.client_uuid),
+                    'message': text,
+                    'timestamp': timestamp
+                }
+
+            elif option == "users_list":
+                message = {
+                    'id': str(uuid.uuid4()),
+                    'type': "users_list",
+                    'username': self.username,
+                    'client_uuid': str(self.client_uuid),
+                    'timestamp': timestamp
+                }
+
+            elif option == "user_messages":
+                message = {
+                    'id': str(uuid.uuid4()),
+                    'type': "user_messages_list",
+                    'username': self.username,
+                    'client_uuid': str(self.client_uuid),
+                    'timestamp': timestamp
+                }
+
+            elif option == "disconnect":
+                message = {
+                    'id': str(uuid.uuid4()),
+                    'type': "disconnect",
+                    'username': self.username,
+                    'client_uuid': str(self.client_uuid),
+                    'timestamp': timestamp
+                }
+
+            body_message = json.dumps(message)
+
+            self.channel.basic_publish(
+                exchange='',
+                routing_key='server_pending_messages',
+                body=body_message,
+                properties = pika.BasicProperties(content_type='text/plain', delivery_mode=2)
+            )
+
+    def connect(self):
+        self.done_checking = threading.Event()
+
+        while not self.is_logged:
+            username = input("Ingrese nombre de usuario: ")
+
+            if (username == "") or ('' in username == True):
+                print("No puede ingresar campos vacíos")
 
             else:
-                print("Nombre de usuario no disponible. Ingrese otro nombre de usuario")
-        
-        self.channel.queue_declare(queue=self.username, durable=True)
-        self.channel.exchange_declare(exchange='broadcast',
-                         exchange_type='fanout')
-        self.channel.exchange_declare(exchange='user_channel',
-                         exchange_type='')
+                self.send(username, "login")
+                self.done_checking.wait()
+                self.done_checking.clear()
 
-        threading.Thread(target=self.get_msgs, daemon=True).start()
-
-    
-    def get_msgs(self):
-
-        def callback(ch, method, properties, body):
-            print(" R[x] Received %r" % body)
-        #Declaramos la cola denuevo (buena practica)
-        self.channel.queue_declare(queue=self.username, durable=True)
-
-        self.channel.queue_bind(exchange='broadcast', queue=self.username)
-
-        self.channel.basic_consume(queue=self.username,
-                            auto_ack=True,
-                            on_message_callback=callback)
-
-        print(' [*] Waiting for messages. To exit press CTRL+C')
-        self.channel.start_consuming()
-
-    def send(self, dest_user, msg):
-        if msg != '':
-            client_producer = self.username
-            #client_consumer = dest_user
-            
-            print("S[{}] {}".format(client_producer, msg))
-
-            self.channel.basic_publish(exchange='broadcast',
-                                  routing_key='',
-                                  body=msg,
-                                  properties= pika.BasicProperties(
-                                      delivery_mode=2,
-                                  ))
-            print(" [x] Sent 'Hello World!'")
-
-    def JoinChat(self, user):
-        client_producer = user
-        #client_consumer = dest_user
-        
-        print("S[{}] {}".format(client_producer, msg))
-
-        self.channel.basic_publish(
-            exchange = 'user_channel',
-            routing_key ='user_channel_route',
-            body = client_producer,
-            properties = pika.BasicProperties(
-                delivery_mode=2, #2 hace que el mensaje sea persistente
-            ))
-
-        #Esperamos respuesta del server
-        def callback(ch, method, properties, body):
-            print(" R[x] Received %r" % body)
-            if (body=="Ok"):
-                return(True)
-            return(False)
-        #Declaramos exchange para control de usuarios
-        self.channel.exchange_declare(exchange='user_channel', exchange_type='')
-
-        #Declaramos la cola denuevo (buena practica)
-        self.channel.queue_declare(queue=self.username, durable=True)
-
-        #Declaramos a que cola va a enviar el mensaje el exchange
-        self.channel.queue_bind(exchange='user_channel', queue=self.username)
-        
-        #El cliente obtiene el mensaje de la cola de mensajes
-        response = self.channel.basic_consume(
-            queue=self.username, on_message_callback=callback, auto_ack=True)
-
-        self.channel.start_consuming()
-        print(" [x] Sent 'Hello World!'")
-        return(response)
-        
-
-    #PENDIENTE
-    def get_users(self):
-        print("Lista de usuarios conectados: ")
-        #users_list = self.users_stub.GetUsers(chat_pb2.Empty())
-        
-        #for user in users_list.users:
-        #    print(user.user_id)
-
-
-    def get_user_messages(self):
-
-        def callback(ch, method, properties, body):
-            print(" R[x] Received %r" % body)
-
-        #Declaramos la cola denuevo (buena practica)
-        self.channel.queue_declare(queue=self.username, durable=True)
-
-        self.channel.queue_bind(exchange='broadcast', queue=self.username)
-
-        
-
-        print("Lista de mensajes enviados: ")
-        print("-----------------------------")
-        self.channel.basic_consume(queue=self.username,
-                            auto_ack=True,
-                            on_message_callback=callback)
-
-        print(' [*] Waiting for messages. To exit press CTRL+C')
-        self.channel.start_consuming()
+        self.username = username
 
     def disconnect(self):
+        self.send("disconnect", "disconnect")
         self.connection.close()
-
-    
 
 if __name__ == '__main__':
     logging.basicConfig()
-    c = Client()
+    client = Client()
+
+    client.get_direct_messages()
+
+    print("\n-----------------------------")
+    print("Bienvenido al Chat No-RPC")
+    print("Un chat donde los RPC no son bienvenidos")
+    client.connect()
+
+    print("-----------------------------\n")
+
+    print("-----------------------------")
+    print("INFORMACIÓN")
+    print("-----------------------------")
+    print("Se ha conectado al chat como " + client.username)
+    print("Para enviar un mensaje simplemente escriba y presione enter\n")
+    print("Algunos comandos de utilidad:")
+    print("/users: Lista los usuarios conectados")
+    print("/mymgs: Lista sus mensajes enviados")
+    print("/exit: Abandonar chat (o puede usar Ctrl+C directamente)\n")
+    
+    client.get_msgs()
 
     while True:
-        print("Elija una opción")
-        print("----------------------------")
-        print("1) Enviar mensaje")
-        print("2) Recibir mensajes")
-        print("3) Mostrar lista de usuarios")
-        print("4) Mostrar todos mis mensajes enviados")
-        print("5) Salir del chat")
-        opt = input("Su opción: ")
+        try:
+            user_input = input()
+            sys.stdout.write("\033[F")
+            
+            # Comando para ver los clientes conectados al chat.
+            if user_input == "/users":
+                client.send(user_input, "users_list")
 
-        if opt == '2':
-            msg = input("Escriba su mensaje: ")
-            c.send(c.username, msg)
+            # Comando para ver los mensajes enviados por el cliente.
+            elif user_input == "/mymgs":
+                client.send(user_input, "user_messages")
 
-        
-        elif opt == '3':
-            print("???")
-            c.get_users()
+            # Comando para desconectarse del chat.
+            elif user_input == "/exit":
+                client.disconnect()
+                break
 
-        elif opt == '4':
-            c.get_user_messages()
+            # Envío de un mensaje normal.
+            else:
+                client.send(user_input, "text")
 
-        elif opt == '5':
-            c.disconnect()
+        except KeyboardInterrupt:
+            client.disconnect()
+            break
 
-    
-    #c.get_users()
-    #c.JoinChat()
-    #client = Client()
-    #client.send("hola")
-    #run()
+    print("\n\nCerrando conexión... ¡Hasta pronto!")
