@@ -9,28 +9,42 @@ import json
 import sys
 import uuid
 
-
+# Espera a que RabbitMQ inicie.
 time.sleep(10)
+
+# Estructuras de datos para almacenamiento de mensajes y usuarios.
 chats = {}
 logged_users = []
 
+# Conexión y creación de channel a RabbitMQ mediante pika.
 connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
 channel = connection.channel()
 
+# Declaración de cola para recibir mensajes por parte de los clientes.
 channel.queue_declare(queue="server_pending_messages", durable=True)
 
+# Declaración de exchange para ruteo de mensajes a colas de clientes (exclusivo para cada uno).
 channel.exchange_declare(exchange='user_channel', exchange_type='direct')
+
+# Declaración de exchange para transmisión de un mensaje a todos los usuarios.
 channel.exchange_declare(exchange='broadcast', exchange_type='fanout')
 
 def on_request(ch, method, props, body):
+    """
+    Una función que se ejecuta ante la llegada de un nuevo mensaje a la cola del servidor por parte 
+    de un cliente.
+    """
+    # Parseo de mensaje a JSON
     user_message_string = body.decode("utf-8")
     user_message_json = json.loads(user_message_string)
     now = datetime.now()
     
+    # Obtención de atributos.
     request_type = user_message_json["type"]
     username = user_message_json["username"]
     client_uuid = str(user_message_json["client_uuid"])
 
+    # Fecha y hora del server.
     timestamp = datetime.timestamp(now)
 
     # Inicio de sesión.
@@ -76,6 +90,7 @@ def on_request(ch, method, props, body):
             body=body_response
         )
 
+        # Registro en log.txt.
         f = open("log.txt", "a")
         
         f.write("Registro de mensaje: \n")
@@ -106,7 +121,7 @@ def on_request(ch, method, props, body):
         }
 
         body_response = json.dumps(response_message)
-
+        
         channel.basic_publish(
             exchange='user_channel', 
             routing_key=client_uuid, 
