@@ -1,8 +1,0 @@
- 
-https://grpc.io/docs/tutorials/basic/python/
-https://medium.com/@dwdraju/grpc-101-with-docker-nodejs-and-express-4c84ed00e88f
-https://ysmiles.com/2017/10/05/Run-a-basic-gRPC-example-with-Docker/
-
-python -m grpc_tools.protoc -I../../protos --python_out=. --grpc_python_out=. ../../protos/chat.proto
-
-expose vs ports: https://stackoverflow.com/questions/40801772/what-is-the-difference-between-docker-compose-ports-vs-expose
